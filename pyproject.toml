@@ -1,0 +1,65 @@
+[project]
+name = "pymordial"
+version = "0.1.0"
+description = "A Python library designed to control BlueStacks through ADB commands, enabling seamless automation and management of Android applications on a PC."
+readme = "README.md"
+authors = [
+    { name = "IAmNo1Special", email = "ivmno1special@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "adb-shell>=0.4.4",
+    "av>=16.0.1",
+    "easyocr>=1.7.2",
+    "numpy>=2.2.5",
+    "opencv-python>=4.12.0.88",
+    "pillow>=11.1.0",
+    "psutil>=7.0.0",
+    "pyautogui>=0.9.54",
+    "pytesseract>=0.3.13",
+    "pywin32>=310",
+    "pyyaml>=6.0.2",
+    "tqdm>=4.67.1",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Emulators",
+    "Topic :: Utilities"
+]
+
+[project.urls]
+homepage = "https://github.com/IAmNo1Special/Pymordial"
+issues = "https://github.com/IAmNo1Special/Pymordial/issues"
+documentation = "https://pymordial.readthedocs.io"
+
+[project.optional-dependencies]
+# Optional OCR engines (choose one based on your needs)
+tesseract = ["pytesseract>=0.3.10"]
+easyocr = ["easyocr>=1.7.2"]
+# WindowsOCR requires manual winsdk installation (experimental)
+# See OCR_ENGINES.md for details
+
+[build-system]
+requires = ["uv_build>=0.8.8,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "black>=25.9.0",
+    "isort>=7.0.0",
+    "pytest>=9.0.1",
+    "pytest-mock>=3.15.1",
+    "pytest-cov>=7.0.0",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests as integration tests (requires running BlueStacks and ADB)",
+]
+

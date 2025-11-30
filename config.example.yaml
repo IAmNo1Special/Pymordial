@@ -1,0 +1,83 @@
+# Pymordial User Configuration
+#
+# This file contains user-specific overrides for Pymordial settings.
+# Copy this file to config.yaml and customize as needed.
+#
+# Any settings here will override the package defaults in:
+# src/pymordial/configs.yaml
+
+# --- ADB Settings ---
+adb:
+  # default_ip: "127.0.0.1"
+  # default_port: 5555
+  # default_max_retries: 10
+  # default_wait_time: 1
+  # default_timeout: 30
+
+  # Streaming settings
+  stream:
+    # resolution: 1024
+    # bitrate: "5M"
+    # time_limit: 180
+    # queue_size: 100
+
+  # Monkey testing
+  # monkey_verbosity: 1
+
+# --- BlueStacks Settings ---
+bluestacks:
+  # resolution: [1920, 1080]
+  # default_max_retries: 5
+  # default_wait_time: 1
+  # default_timeout: 30
+
+  # UI Element Labels (for internal use)
+  # ui:
+  #   loading_text: "Starting BlueStacks"
+
+# --- Controller Settings ---
+controller:
+  # default_click_times: 1
+  # default_max_tries: 2
+
+# --- OCR & Extraction Strategies ---
+extract_strategy:
+  # Default strategy settings
+  default:
+    # upscale_factor: 2
+    # denoise_strength: 5
+    # tesseract_config: "--oem 3 --psm 6"
+
+  # Game-specific strategies (e.g. Revomon)
+  revomon:
+    move:
+      # upscale_factor: 3
+      # crop_left_ratio: 0.42
+      # crop_bottom_ratio: 0.23
+      # whitelist_config: "-c tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    level:
+      # crop_left_ratio: 0.30
+      # whitelist_config: "-c tessedit_char_whitelist=0123456789"
+
+  # Tesseract Configuration
+  tesseract:
+    # Path to Tesseract executable (if not in PATH)
+    # tesseract_cmd: "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+
+    # Preprocessing defaults
+    preprocess:
+      # upscale_factor: 2
+      # denoise_strength: 10
+
+# --- EasyOCR Settings ---
+easyocr:
+  # default_languages: ["en"]
+
+# --- App Settings ---
+app:
+  # action_timeout: 60
+  # action_wait_time: 10
+
+# --- Element Settings ---
+element:
+  # default_confidence: 0.7
