@@ -52,4 +52,4 @@ __all__ = [
     "StateMachine",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
