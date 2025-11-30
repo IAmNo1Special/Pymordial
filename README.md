@@ -102,7 +102,7 @@ bluestacks:
 
 - **[API Reference](docs/API_REFERENCE.md)**: Detailed guide to all classes and methods.
 - **[Knowledge Base](docs/pymordial_knowledge.md)**: Deep dive into architecture and patterns.
-- **[Release Notes](RELEASE_NOTES_v0.1.md)**: What's new in v0.1.0.
+- **[Release Notes](RELEASE_NOTES_v0.1.1.md)**: What's new in v0.1.1.
 
 ## 🤝 Contributing
 

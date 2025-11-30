@@ -1,4 +1,4 @@
-# Pymordial v0.1.0 - The "Genesis" Release 🦕
+# Pymordial v0.1.1 - The "Genesis" Release 🦕
 
 ## 🎉 First Stable Release
 
