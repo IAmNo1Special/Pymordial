@@ -1,3 +1,12 @@
+# Pymordial User Configuration
+#
+# This file contains user-specific overrides for Pymordial settings.
+# Copy this file to config.yaml and customize as needed.
+#
+# Any settings here will override the package defaults in:
+# src/pymordial/configs.yaml
+
+# --- ADB Settings ---
 adb:
   default_ip: "127.0.0.1"
   default_port: 5555
@@ -6,6 +15,7 @@ adb:
   default_timeout: 30
   process_wait_timeout: 10
   app_start_timeout: 60
+  # --- Streaming Settings ---
   stream:
     resolution: 1024
     bitrate: "5M"
@@ -15,22 +25,9 @@ adb:
     start_timeout_iterations: 50
     start_wait: 0.1
     stop_timeout: 2
-  monkey_verbosity: 1
   app_check_retries: 20
-  keyevents:
-    home: 3
-    enter: 66
-    esc: 4
-    app_switch: "KEYCODE_APP_SWITCH"
-  commands:
-    screenrecord: "screenrecord --output-format=h264 --size {resolution}x{resolution} --bit-rate {bitrate} --time-limit {time_limit} -"
-    dumpsys_focus: "dumpsys window windows | grep -E 'mCurrentFocus' | grep {package_name}"
-    force_stop: "am force-stop {package_name}"
-    screencap: "screencap -p"
-    tap: "input tap {x} {y}"
-    text: "input text {text}"
-    keyevent: "input keyevent {keycode}"
-    monkey: "monkey -p {package_name} -v {verbosity}"
+
+# --- BlueStacks Settings ---
 bluestacks:
   resolution: [1920, 1080]
   default_max_retries: 5
@@ -38,27 +35,18 @@ bluestacks:
   default_timeout: 30
   default_transport_timeout_s: 60.0
   wait_for_load_timeout: 60
-  hd_player_exe: "HD-Player.exe"
-  window_title: "Bluestacks App Player"
-  ui:
-    loading_img_label: "bluestacks_loading_img"
-    loading_text: "Starting BlueStacks"
-    my_games_button_label: "bluestacks_my_games_button"
-    my_games_text: "My games"
-    store_search_input_label: "bluestacks_store_search_input"
-    store_search_text: "Search for games & apps"
-    store_button_label: "bluestacks_store_button"
-    playstore_search_input_label: "bluestacks_playstore_search_input"
-    loading_screen_img_label: "bluestacks_loading_screen_img"
-    adb_screenshot_img_label: "adb_screenshot_img"
-image_controller:
-  default_find_ui_retries: 2
+
+# --- PymordialApp Settings ---
 app:
   action_timeout: 60
   action_wait_time: 10
+
+# --- PymordialElement Settings ---
 element:
   default_confidence: 0.7
   pixel_size: [1, 1]
+
+# --- OCR & Extraction Strategies ---
 extract_strategy:
   default:
     upscale_factor: 2
@@ -68,23 +56,9 @@ extract_strategy:
     threshold_binary_max: 255
     inversion_threshold_mean: 127
     tesseract_config: "--oem 3 --psm 6"
-  revomon:
-    move:
-      upscale_factor: 3
-      crop_left_ratio: 0.42
-      crop_bottom_ratio: 0.23
-      padding: 40
-      whitelist_config: "-c tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    level:
-      crop_left_ratio: 0.30
-      whitelist_config: "-c tessedit_char_whitelist=0123456789"
-    padding_value_white: 255
-    adaptive_thresh_block_size: 11
-    adaptive_thresh_c: 2
   tesseract:
     base_config: "--oem 3"
     default_config: "--oem 3 --psm 6"
-    tesseract_cmd: "F:\\Pymordial\\src\\pymordial\\bin\\tesseract.exe"
     preprocess:
       upscale_factor: 2
       denoise_strength: 10
@@ -96,21 +70,16 @@ extract_strategy:
       single_word: "8"
       single_line: "7"
       block: "6"
+
+# --- EasyOCR Settings ---
 easyocr:
   default_languages: ["en"]
-setup:
-  installer_name: "BlueStacksInstaller.exe"
-  download_url: "https://cloud.bluestacks.com/api/getdownloadnow?platform=win&win_arch=64&main_program=app_player"
-  reg_key: "SOFTWARE\\BlueStacks_nxt"
-assets:
-  bluestacks_loading_img: "bluestacks_loading_img.png"
-  bluestacks_my_games_button: "bluestacks_my_games_button.png"
-  bluestacks_store_search_input: "bluestacks_store_search_input.png"
-  bluestacks_store_button: "bluestacks_store_button.png"
-  bluestacks_playstore_search_input: "bluestacks_playstore_search_input.png"
-  bluestacks_loading_screen_img: "bluestacks_loading_screen_img.png"
-  adb_screenshot_img: "adb_screenshot_img.png"
+
+# --- Controller Settings ---
 controller:
   default_click_times: 1
   default_max_tries: 2
   click_coord_times: 1
+image_controller:
+  default_find_ui_retries: 2
+
