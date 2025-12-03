@@ -1,79 +1,50 @@
 """Implementation of PymordialText element."""
 
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from pathlib import Path
 
-from pymordial.core.pymordial_element import PymordialElement
 from pymordial.core.extract_strategy import PymordialExtractStrategy
-
-if TYPE_CHECKING:
-    from pymordial.controller.bluestacks_controller import BluestacksController
-    from pymordial.controller.image_controller import ImageController
+from pymordial.core.pymordial_element import PymordialElement
 
 
+@dataclass(kw_only=True)
 class PymordialText(PymordialElement):
-    """UI element identified by text content (via OCR).
+    """PymordialElement that contains text (can be known/unknown).
+
+    If the text is known and provided, this element can be passed to a PymordialController's `match` method.
 
     Attributes:
-        text: The text string to search for.
+        filepath: Optional absolute path for where the element's image will be saved. When not provided, no image is saved.
+        known_text: Optional known text that the element contains.
         extract_strategy: Optional OCR preprocessing strategy.
     """
 
-    def __init__(
-        self,
-        label: str,
-        text: str,
-        bluestacks_resolution: tuple[int, int],
-        position: tuple[int, int] | None = None,
-        size: tuple[int, int] | None = None,
-        extract_strategy: PymordialExtractStrategy | None = None,
-    ):
-        """Initializes a PymordialText.
+    filepath: str | Path | None = None
+    known_text: str | None = None
+    extract_strategy: PymordialExtractStrategy | None = None
 
-        Args:
-            label: A unique identifier for the element.
-            text: The text string to search for.
-            bluestacks_resolution: The reference window size (width, height).
-            position: Optional (x, y) coordinates.
-            size: Optional (width, height).
-            extract_strategy: Optional OCR preprocessing strategy.
-        """
-        super().__init__(label, bluestacks_resolution, position, size)
-        self.text = text
-        self.extract_strategy = extract_strategy
+    def __post_init__(self):
+        super().__post_init__()
 
-    def match(
-        self,
-        bs_controller: "BluestacksController",
-        image_controller: "ImageController",
-        screenshot: bytes | None = None,
-    ) -> tuple[int, int] | None:
-        """Attempts to find the element by checking for text presence.
+        if self.filepath is not None:
+            try:
+                self.filepath = Path(self.filepath).resolve()
+            except TypeError:
+                raise TypeError(
+                    f"Filepath must be a string or Path object, not {type(self.filepath).__name__}"
+                )
+            except Exception as e:
+                raise ValueError(f"Invalid filepath: {e}")
 
-        Args:
-            bs_controller: The BlueStacks controller instance.
-            image_controller: The Image controller instance.
-            screenshot: Optional pre-captured screenshot bytes.
+        if self.known_text is not None:
+            if not isinstance(self.known_text, str):
+                raise TypeError(
+                    f"Known text must be a string, not {type(self.known_text).__name__}"
+                )
+            self.known_text = self.known_text.lower()
 
-        Returns:
-            The center coordinates if found, None otherwise.
-        """
-        screen_image = screenshot if screenshot else bs_controller.capture_screen(self)
-        if not screen_image:
-            return None
-
-        # Use ImageController's text checking capabilities
-        # Note: This is a basic check. For finding coordinates of text,
-        # we might need more advanced OCR features in the future.
-        # For now, if text is found, we return the center of the defined region
-        # or the center of the screen if no region is defined.
-
-        is_found = image_controller.check_text(
-            text_to_find=self.text,
-            image_path=screen_image,
-            strategy=self.extract_strategy,
-        )
-
-        if is_found:
-            return self.center if self.center else (0, 0)  # Fallback if no position
-
-        return None
+        if self.extract_strategy is not None:
+            if not isinstance(self.extract_strategy, PymordialExtractStrategy):
+                raise TypeError(
+                    f"Extract strategy must be a PymordialExtractStrategy, not {type(self.extract_strategy).__name__}"
+                )
