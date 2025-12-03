@@ -9,7 +9,6 @@ from pymordial.utils.config import get_config
 
 if TYPE_CHECKING:
     from pymordial.controller.pymordial_controller import PymordialController
-    from pymordial.core.pymordial_element import PymordialElement
     from pymordial.core.pymordial_screen import PymordialScreen
 
 
@@ -140,26 +139,4 @@ class PymordialApp:
         """
         return self.app_state.current_state == AppLifecycleState.CLOSED
 
-    def is_element_visible(self, pymordial_element: PymordialElement) -> bool:
-        """Checks if a UI element is visible on the screen.
-
-        Args:
-            pymordial_element: The element to check for.
-
-        Returns:
-            True if the element is found, False otherwise.
-
-        Raises:
-            ValueError: If the controller is not initialized.
-        """
-        if not self.pymordial_controller:
-            raise ValueError(
-                f"{self.app_name}'s pymordial_controller is not initialized"
-            )
-        return (
-            self.pymordial_controller.image.where_element(
-                bs_controller=self.pymordial_controller.bluestacks,
-                pymordial_element=pymordial_element,
-            )
-            is not None
-        )
+    
