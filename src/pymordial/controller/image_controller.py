@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING
 
 from adb_shell.exceptions import TcpTimeoutException
 from PIL import Image
-from pyautogui import ImageNotFoundException
+from pyautogui import ImageNotFoundException, center, locate
 
 from pymordial.core.extract_strategy import PymordialExtractStrategy
-from pymordial.core.pymordial_element import PymordialElement
-from pymordial.state_machine import BluestacksState
+from pymordial.core import PymordialElement
+from pymordial.core import PymordialImage
 from pymordial.utils.config import get_config
 from pymordial.utils.image_text_checker import ImageTextChecker
 
@@ -34,8 +34,9 @@ class ImageController:
         img_txt_checker: Helper for checking text in images.
     """
 
-    def __init__(self):
+    def __init__(self, PymordialController: "PymordialController"):
         """Initializes the ImageController."""
+        self.pymordial_controller = PymordialController
         self.img_txt_checker: ImageTextChecker = ImageTextChecker()
 
     def check_text(
@@ -186,33 +187,42 @@ class ImageController:
             logger.error(f"Error in check_pixel_color: {e}")
             raise ValueError(f"Error checking pixel color: {e}")
 
-    def where_element(
+    def where_image(
         self,
-        pymordial_element: PymordialElement,
-        pymordial_controller: "PymordialController | None" = None,
+        pymordial_image: PymordialImage,
         screenshot_img_bytes: bytes | None = None,
         max_retries: int = DEFAULT_FIND_UI_RETRIES,
     ) -> tuple[int, int] | None:
-        """Finds the coordinates of a UI element on the screen.
+        """Finds the coordinates of a PymordialImage element on the screen.
 
         Args:
-            pymordial_element: The element to find.
-            pymordial_controller: The PymordialController instance (optional).
+            pymordial_image: The PymordialImage element to find.
             screenshot_img_bytes: Optional pre-captured screenshot.
             max_retries: Maximum number of retries.
 
         Returns:
             (x, y) coordinates if found, None otherwise.
         """
-        # Ensure Bluestacks is loading or ready before trying to find UI element
-        if pymordial_controller:
-            match pymordial_controller.bluestacks.bluestacks_state.current_state:
-                case BluestacksState.CLOSED:
-                    logger.warning("Cannot find UI element - Bluestacks is closed")
-                    return None
+        # Ensures PymordialController's ADB is connected before trying to find the PymordialImage element
+        if not isinstance(pymordial_image, PymordialImage):
+            raise TypeError(
+                f"pymordial_image must be a PymordialImage instance, not {type(pymordial_image)}"
+            )
+            return None
+        if screenshot_img_bytes is None:
+            match self.pymordial_controller.adb.is_connected():
+                case False:
+                    raise ValueError("PymordialController's ADB is not connected")
+            try:
+                # TODO: Will use capture_screenshot method to capture screenshot
+                pass
+            except TcpTimeoutException:
+                raise TcpTimeoutException(
+                    f"TCP timeout while finding element {pymordial_image.label}"
+                )
 
         logger.debug(f"Finding UI element. Max retries: {max_retries}")
-        logger.debug(f"Looking for PymordialElement: {pymordial_element.label}...")
+        logger.debug(f"Looking for PymordialImage: {pymordial_image.label}...")
         find_ui_retries: int = 0
         while (
             (find_ui_retries < max_retries)
@@ -220,33 +230,48 @@ class ImageController:
             else True
         ):
             try:
-                # Delegate matching logic to the element itself
-                coord = pymordial_element.match(
-                    pymordial_controller=pymordial_controller,
-                    image_controller=self,
-                    screenshot=screenshot_img_bytes,
+                haystack_img = Image.open(BytesIO(screenshot_img_bytes))
+
+                # Scale the needle image to match current resolution
+                scaled_img = self.scale_img_to_screen(
+                    image_path=pymordial_image.asset_path,
+                    screen_image=haystack_img,
+                    bluestacks_resolution=pymordial_image.resolution,
                 )
 
-                if coord:
-                    logger.debug(
-                        f"PymordialElement {pymordial_element.label} found at: {coord}"
+                try:
+                    ui_location = locate(
+                        needleImage=scaled_img,
+                        haystackImage=haystack_img,
+                        confidence=pymordial_image.confidence,
+                        grayscale=True,
+                        region=self.region,
                     )
-                    return coord
+                except ImageNotFoundException:
+                    logger.debug(
+                        f"Failed to find PymordialImage element: {pymordial_image.label}"
+                    )
+                    return None
 
-            except (ImageNotFoundException, TcpTimeoutException):
-                pass
+                coords = center(ui_location)
+                if coords:
+                    logger.debug(
+                        f"PymordialImage {pymordial_image.label} found at: {coords}"
+                    )
+                    return coords
+
             except Exception as e:
-                logger.error(f"Error finding element {pymordial_element.label}: {e}")
+                logger.error(f"Error finding element {pymordial_image.label}: {e}")
 
             find_ui_retries += 1
             logger.debug(
-                f"PymordialElement {pymordial_element.label} not found. Retrying... ({find_ui_retries}/{max_retries})"
+                f"PymordialImage {pymordial_image.label} not found. Retrying... ({find_ui_retries}/{max_retries})"
             )
-            # Use config directly instead of legacy constant
+
             sleep(DEFAULT_WAIT_TIME)
             continue
 
-        logger.debug(f"Wasn't able to find PymordialElement: {pymordial_element.label}")
+        logger.info(f"Wasn't able to find PymordialImage within {max_retries} retries: {pymordial_image.label}")
         return None
 
     def where_elements(
