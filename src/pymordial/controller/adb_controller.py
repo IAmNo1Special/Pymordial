@@ -2,6 +2,7 @@
 
 import logging
 import queue
+import sys
 import threading
 import time
 
@@ -169,12 +170,13 @@ class AdbController:
                         return False
 
     def start_stream(
-        self, resolution: int = STREAM_RESOLUTION, bitrate: str = STREAM_BITRATE
+        self, width: int = 1920, height: int = 1080, bitrate: str = STREAM_BITRATE
     ) -> bool:
         """Starts screen streaming using adb-shell's streaming_shell with PyAV decoding.
 
         Args:
-            resolution: Stream resolution (width=height).
+            width: Stream width.
+            height: Stream height.
             bitrate: Stream bitrate.
 
         Returns:
@@ -189,9 +191,7 @@ class AdbController:
             return False
 
         self._is_streaming.set()
-        command = CMD_SCREENRECORD.format(
-            resolution=resolution, bitrate=bitrate, time_limit=STREAM_TIME_LIMIT
-        )
+        command = f"screenrecord --output-format=h264 --size {width}x{height} --bit-rate {bitrate} --time-limit {STREAM_TIME_LIMIT} -"
 
         # Queue-based file-like object for PyAV
         class StreamReader:
@@ -322,13 +322,34 @@ class AdbController:
             self.logger.warning("Error: ADB not connected.")
             return None
 
-        return self.device.shell(
-            command,
-            timeout_s=self.timeout,
-            read_timeout_s=self.timeout,
-            transport_timeout_s=self.timeout,
-            decode=False,
-        )
+        try:
+            return self.device.shell(
+                command,
+                timeout_s=self.timeout,
+                read_timeout_s=self.timeout,
+                transport_timeout_s=self.timeout,
+                decode=False,
+            )
+        except ConnectionAbortedError:
+            self.logger.error("ADB connection aborted. Attempting to reconnect...")
+            if self.connect():
+                self.logger.info("Reconnected to ADB successfully. Retrying command...")
+                try:
+                    return self.device.shell(
+                        command,
+                        timeout_s=self.timeout,
+                        read_timeout_s=self.timeout,
+                        transport_timeout_s=self.timeout,
+                        decode=False,
+                    )
+                except Exception as e:
+                    self.logger.critical(
+                        f"Failed to execute command after reconnection: {e}"
+                    )
+                    sys.exit(1)
+            else:
+                self.logger.critical("Failed to reconnect to ADB. Exiting program.")
+                sys.exit(1)
 
     def tap(self, x: int, y: int) -> None:
         """Performs a simple tap at (x, y).
@@ -338,7 +359,7 @@ class AdbController:
             y: Y coordinate.
         """
         self.logger.debug(f"Tapping at ({x}, {y})")
-        self.shell_command(CMD_TAP.format(x=x, y=y))
+        self.shell_command(f"input tap {x} {y}")
 
     def open_app(
         self,
@@ -366,9 +387,7 @@ class AdbController:
         start_time: float = time.time()
         while time.time() - start_time < timeout:
             self.shell_command(
-                CMD_MONKEY.format(
-                    package_name=app.package_name, verbosity=MONKEY_VERBOSITY
-                )
+                f"monkey -p {app.package_name} -v {MONKEY_VERBOSITY}"
             )
             match self.is_app_running(app, max_retries=5, wait_time=wait_time):
                 case True:
@@ -490,13 +509,13 @@ class AdbController:
 
         # Force stop the app
         self.shell_command(
-            CMD_FORCE_STOP.format(package_name=app.package_name),
+            f"am force-stop {app.package_name}",
         )
 
         # Wait a moment for the app to close
         time.sleep(wait_time)
 
-        self.shell_command(CMD_FORCE_STOP.format(package_name=app.package_name))
+        self.shell_command(f"am force-stop {app.package_name}")
 
         # Poll for app closure
         start_time = time.time()
@@ -526,7 +545,7 @@ class AdbController:
             )
             return False
         # Go to home screen
-        self.shell_command(CMD_KEYEVENT.format(keycode=KEYEVENT_HOME))
+        self.shell_command(f"input keyevent {KEYEVENT_HOME}")
         time.sleep(DEFAULT_WAIT_TIME)
         self.logger.debug("Home screen opened via ADB")
         return True
@@ -570,7 +589,7 @@ class AdbController:
             )
             return False
         # Send the text using ADB
-        self.shell_command(CMD_TEXT.format(text=text))
+        self.shell_command(f"input text {text}")
         self.logger.debug(f"Text '{text}' sent via ADB")
         return True
 
@@ -587,7 +606,7 @@ class AdbController:
             )
             return False
         # Send the enter key using ADB
-        self.shell_command(CMD_KEYEVENT.format(keycode=KEYEVENT_ENTER))
+        self.shell_command(f"input keyevent {KEYEVENT_ENTER}")
         self.logger.debug("Enter key sent via ADB")
         return True
 
@@ -604,7 +623,7 @@ class AdbController:
             )
             return False
         # Send the esc key using ADB
-        self.shell_command(CMD_KEYEVENT.format(keycode=KEYEVENT_ESC))
+        self.shell_command(f"input keyevent {KEYEVENT_ESC}")
         self.logger.debug("Esc key sent via ADB")
         return True
 
@@ -620,6 +639,16 @@ class AdbController:
                 "ADB device not initialized. Skipping 'show_recent_apps' method call."
             )
             return False
-        self.shell_command(CMD_KEYEVENT.format(keycode=KEYEVENT_APP_SWITCH))
+        self.shell_command(f"input keyevent {KEYEVENT_APP_SWITCH}")
         self.logger.debug("Recent apps drawer successfully opened")
         return True
+
+    def __repr__(self) -> str:
+        """Returns a string representation of the AdbController."""
+        return (
+            f"AdbController("
+            f"ip='{self.ip}', "
+            f"port={self.port}, "
+            f"connected={self.is_connected()}, "
+            f"streaming={self._streaming})"
+        )

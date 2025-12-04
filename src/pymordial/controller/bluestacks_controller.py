@@ -1,19 +1,14 @@
 """Controller for managing the BlueStacks emulator."""
 
-import io
 import logging
 import os
 import time
 from importlib.resources import files
 
 import psutil
-import win32con
-import win32gui
-from PIL import Image, ImageGrab
 
 from pymordial.controller.adb_controller import AdbController
 from pymordial.controller.image_controller import ImageController
-from pymordial.core.elements.pymordial_button import PymordialButton
 from pymordial.core.elements.pymordial_image import PymordialImage
 from pymordial.core.pymordial_app import PymordialApp
 from pymordial.core.pymordial_element import PymordialElement
@@ -101,61 +96,49 @@ class BluestacksElements:
         """
         self.controller = controller
 
-        self.bluestacks_loading_img: PymordialElement = PymordialImage(
-            label=UI_LOADING_IMG_LABEL,
-            bluestacks_resolution=self.controller.ref_window_size,
-            asset_path=files("pymordial.assets").joinpath(ASSET_LOADING_IMG),
-            confidence=0.7,
-            element_text=UI_LOADING_TEXT,
-        )
-
-        self.bluestacks_my_games_button: PymordialElement = PymordialButton(
+        self.bluestacks_my_games_button: PymordialElement = PymordialImage(
             label=UI_MY_GAMES_BUTTON_LABEL,
-            bluestacks_resolution=self.controller.ref_window_size,
-            asset_path=files("pymordial.assets").joinpath(ASSET_MY_GAMES_BUTTON),
+            og_resolution=self.controller.ref_window_size,
+            filepath=files("pymordial.assets").joinpath(ASSET_MY_GAMES_BUTTON),
             confidence=0.6,
-            element_text=UI_MY_GAMES_TEXT,
+            image_text=UI_MY_GAMES_TEXT,
         )
 
         self.bluestacks_store_search_input: PymordialElement = PymordialImage(
             label=UI_STORE_SEARCH_INPUT_LABEL,
-            bluestacks_resolution=self.controller.ref_window_size,
-            asset_path=files("pymordial.assets").joinpath(ASSET_STORE_SEARCH_INPUT),
-            is_static=False,
+            og_resolution=self.controller.ref_window_size,
+            filepath=files("pymordial.assets").joinpath(ASSET_STORE_SEARCH_INPUT),
             confidence=0.6,
-            element_text=UI_STORE_SEARCH_TEXT,
+            image_text=UI_STORE_SEARCH_TEXT,
         )
 
-        self.bluestacks_store_button: PymordialElement = PymordialButton(
+        self.bluestacks_store_button: PymordialElement = PymordialImage(
             label=UI_STORE_BUTTON_LABEL,
-            bluestacks_resolution=self.controller.ref_window_size,
-            asset_path=files("pymordial.assets").joinpath(ASSET_STORE_BUTTON),
+            og_resolution=self.controller.ref_window_size,
+            filepath=files("pymordial.assets").joinpath(ASSET_STORE_BUTTON),
             confidence=0.6,
         )
 
-        self.bluestacks_playstore_search_inpput: PymordialElement = PymordialImage(
+        self.bluestacks_playstore_search_input: PymordialElement = PymordialImage(
             label=UI_PLAYSTORE_SEARCH_INPUT_LABEL,
-            bluestacks_resolution=self.controller.ref_window_size,
-            asset_path=files("pymordial.assets").joinpath(ASSET_PLAYSTORE_SEARCH_INPUT),
-            is_static=False,
+            og_resolution=self.controller.ref_window_size,
+            filepath=files("pymordial.assets").joinpath(ASSET_PLAYSTORE_SEARCH_INPUT),
             confidence=0.5,
-            element_text=UI_STORE_SEARCH_TEXT,
+            image_text=UI_STORE_SEARCH_TEXT,
         )
 
         # Loading elements
         self.bluestacks_loading_screen_img: PymordialElement = PymordialImage(
             label=UI_LOADING_SCREEN_IMG_LABEL,
-            bluestacks_resolution=self.controller.ref_window_size,
-            asset_path=files("pymordial.assets").joinpath(ASSET_LOADING_SCREEN_IMG),
-            is_static=False,
+            og_resolution=self.controller.ref_window_size,
+            filepath=files("pymordial.assets").joinpath(ASSET_LOADING_SCREEN_IMG),
             confidence=0.99,
         )
 
         self.adb_screenshot_img: PymordialElement = PymordialImage(
             label=UI_ADB_SCREENSHOT_IMG_LABEL,
-            bluestacks_resolution=self.controller.ref_window_size,
-            asset_path=files("pymordial.assets").joinpath(ASSET_ADB_SCREENSHOT_IMG),
-            is_static=False,
+            og_resolution=self.controller.ref_window_size,
+            filepath=files("pymordial.assets").joinpath(ASSET_ADB_SCREENSHOT_IMG),
             confidence=0.99,
         )
 
@@ -366,51 +349,6 @@ class BluestacksController:
             "Could not find HD-Player.exe. Please ensure BlueStacks is installed or manually specify the filepath."
         )
 
-    def capture_loading_screen(self) -> bytes | None:
-        """Captures the loading screen of BlueStacks.
-
-        Returns:
-            The loading screen image as bytes, or None if not found.
-        """
-        time.sleep(1.0)
-        hwnd: int = win32gui.FindWindow(None, WINDOW_TITLE)
-        if hwnd:
-            try:
-                # Restore the window if minimized
-                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                # Pin the window to the foreground
-                win32gui.SetWindowPos(
-                    hwnd,
-                    win32con.HWND_TOPMOST,
-                    0,
-                    0,
-                    0,
-                    0,
-                    win32con.SWP_NOMOVE | win32con.SWP_NOSIZE,
-                )
-                time.sleep(0.5)
-                rect: tuple[int, int, int, int] = win32gui.GetWindowRect(hwnd)
-                bluestacks_window_image: Image.Image = ImageGrab.grab(bbox=rect)
-                time.sleep(0.5)
-
-                # Convert image to bytes
-                img_byte_arr = io.BytesIO()
-                bluestacks_window_image.save(img_byte_arr, format="PNG")
-                img_byte_arr = img_byte_arr.getvalue()
-
-                # Unpin the window from the foreground
-                win32gui.SetWindowPos(
-                    hwnd, win32con.HWND_NOTOPMOST, 0, 0, 0, 0, win32con.SWP_NOSIZE
-                )
-                logger.debug("Loading screen captured as bytes")
-                return img_byte_arr
-            except Exception as e:
-                logger.warning(f"Error capturing loading screen: {e}")
-                raise Exception(f"Error capturing loading screen: {e}")
-        else:
-            logger.warning("Could not find 'Bluestacks App Player' window")
-            return None
-
     def open(
         self,
         max_retries: int = DEFAULT_MAX_RETRIES,
@@ -482,7 +420,7 @@ class BluestacksController:
                 return
 
     def wait_for_load(self, timeout_s: int = WAIT_FOR_LOAD_TIMEOUT):
-        """Waits for Bluestacks to finish loading.
+        """Waits for Bluestacks to finish loading by polling ADB connection.
 
         Args:
             timeout_s: Maximum number of seconds to wait.
@@ -490,39 +428,29 @@ class BluestacksController:
         Raises:
             TimeoutError: If loading takes longer than timeout.
         """
-        logger.debug("Waiting for Bluestacks to load...")
+        logger.debug("Waiting for Bluestacks to load (ADB check)...")
         start_time = time.time()
-        while self.bluestacks_state.current_state == BluestacksState.LOADING:
-            loading_screen: tuple[int, int] | None = (
-                self._image_controller.where_element(
-                    pymordial_element=self.elements.bluestacks_loading_img,
-                    pymordial_controller=None,
-                    screenshot_img_bytes=self.capture_loading_screen(),
-                )
-            )
 
-            # If loading screen is NOT found, Bluestacks is ready
-            if loading_screen is None:
-                logger.debug(
-                    "Loading screen no longer visible - Bluestacks is ready!"
-                )
+        while self.bluestacks_state.current_state == BluestacksState.LOADING:
+            # Try to connect to ADB
+            if self._adb_controller.connect():
+                logger.debug("ADB connected! Waiting 5 seconds for UI to stabilize...")
+                time.sleep(5)
+                logger.info("Bluestacks is loaded & ready.")
                 self.bluestacks_state.transition_to(BluestacksState.READY)
                 return
-            else:
-                logger.debug("Bluestacks is still loading...")
 
             # Check timeout
             if time.time() - start_time > timeout_s:
                 logger.error(
                     f"Timeout waiting for Bluestacks to load after {timeout_s}s"
                 )
+                # We transition to READY anyway to allow retry logic elsewhere if needed,
+                # or maybe we should raise? For now, mimicking previous behavior.
                 self.bluestacks_state.transition_to(BluestacksState.READY)
                 return
 
             time.sleep(DEFAULT_WAIT_TIME)
-
-        logger.info("Bluestacks is loaded & ready.")
-
 
     def kill_bluestacks(self) -> bool:
         """Kills the Bluestacks controller process.
@@ -530,35 +458,56 @@ class BluestacksController:
         This will also close the ADB connection.
 
         Returns:
-            True if Bluestacks was successfully killed, False otherwise.
+            True if Bluestacks was successfully killed (or wasn't running), False if failed.
 
         Raises:
             ValueError: If killing the process fails.
         """
         logger.info("Killing Bluestacks controller...")
 
-        match self.bluestacks_state.current_state:
-            case BluestacksState.CLOSED:
-                logger.debug("Bluestacks is already closed.")
-                return True
-            case BluestacksState.LOADING | BluestacksState.READY:
+        try:
+            # Always try to disconnect ADB first
+            try:
+                self._adb_controller.disconnect()
+            except Exception:
+                pass
+
+            process_found = False
+            for proc in psutil.process_iter(["pid", "name"]):
                 try:
-                    self._adb_controller.disconnect()
-                    for proc in psutil.process_iter(["pid", "name"]):
-                        info = proc.info
-                        if info["name"] == HD_PLAYER_EXE:
-                            proc.kill()
-                            proc.wait(
-                                timeout=PROCESS_WAIT_TIMEOUT
-                            )  # Wait for process to terminate
-                            self.bluestacks_state.transition_to(BluestacksState.CLOSED)
-                            logger.info("Bluestacks controller killed.")
-                            return True
-                    return False
-                except Exception as e:
-                    logger.error(f"Error in kill_bluestacks: {e}")
-                    raise ValueError(f"Failed to kill Bluestacks: {e}")
+                    if proc.info["name"] == HD_PLAYER_EXE:
+                        process_found = True
+                        proc.kill()
+                        proc.wait(timeout=PROCESS_WAIT_TIMEOUT)
+                        logger.info("Bluestacks process killed.")
+                except (
+                    psutil.NoSuchProcess,
+                    psutil.AccessDenied,
+                    psutil.ZombieProcess,
+                ):
+                    pass
+
+            if self.bluestacks_state.current_state != BluestacksState.CLOSED:
+                self.bluestacks_state.transition_to(BluestacksState.CLOSED)
+
+            if not process_found:
+                logger.debug("Bluestacks process was not found.")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error in kill_bluestacks: {e}")
+            raise ValueError(f"Failed to kill Bluestacks: {e}")
 
     def is_ready(self) -> bool:
         """Check if BlueStacks is in READY state."""
         return self.bluestacks_state.current_state == BluestacksState.READY
+
+    def __repr__(self) -> str:
+        """Returns a string representation of the BluestacksController."""
+        return (
+            f"BluestacksController("
+            f"state={self.bluestacks_state.current_state.name}, "
+            f"filepath='{self.filepath}', "
+            f"running_apps={len(self.running_apps)})"
+        )

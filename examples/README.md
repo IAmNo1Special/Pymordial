@@ -1,159 +1,185 @@
 # Pymordial Examples
 
-This directory contains practical examples demonstrating how to use Pymordial for Android automation on BlueStacks.
+Practical examples demonstrating Pymordial for Android automation on BlueStacks.
 
 ## Prerequisites
 
 - BlueStacks 5+ installed and running
-- Pymordial installed (`uv pip install .` from project root)
+- Pymordial installed (`uv pip install pymordial`)
 - ADB connection working
 
 ## Examples Overview
 
 ### [01_basic_connection.py](01_basic_connection.py)
-**What it teaches**: Automatic connection setup
+**Basics**: Connecting to BlueStacks via ADB
 
 Learn how to:
-- Create a `PymordialController` (connection is automatic!)
-- Verify ADB connection status
+- Create a `PymordialController`
+- Check connection status
 - Execute shell commands
-- Disconnect cleanly
+- Verify Android version
 
-**Key Insight**: ADB connection happens automatically via the state machine. You don't need to manually call `connect()`!
-
-**Run it**:
 ```bash
-uv run python examples/01_basic_connection.py
+uv run examples/01_basic_connection.py
 ```
 
 ---
 
 ### [02_app_control.py](02_app_control.py)
-**What it teaches**: App lifecycle management
+**App Lifecycle**: Opening, closing, and managing apps
 
 Learn how to:
-- Define a `PymordialApp`
-- Register apps with the controller
-- Open and close apps
-- Check if an app is running
-- Use config values for timeouts (best practice!)
+- Define `PymordialApp` instances
+- Register apps with controller
+- Open/close apps
+- Check app running status
+- Use app lifecycle states
 
-**Run it**:
 ```bash
-uv run python examples/02_app_control.py
+uv run examples/02_app_control.py
 ```
 
 ---
 
 ### [03_element_clicking.py](03_element_clicking.py)
-**What it teaches**: Finding and clicking UI elements
+**Element Interaction**: Finding and clicking UI elements
 
 Learn how to:
-- Define buttons as elements
-- Use `controller.go_home()` for navigation (clean API!)
-- Use `click_element()` to interact with UI
-- Handle element not found scenarios
-- Use config-based timeout values
+- Define `PymordialImage` elements (buttons, icons)
+- Define `PymordialPixel` elements (color-based)
+- Define `PymordialText` elements (OCR-based)
+- Check element visibility
+- Find element coordinates
+- Click elements
 
-**Run it**:
 ```bash
-uv run python examples/03_element_clicking.py
+uv run examples/03_element_clicking.py
 ```
 
-**Note**: Uses the BlueStacks store button (asset already included).
+**Note**: Requires actual image assets for full functionality.
 
 ---
 
 ### [04_ocr_reading.py](04_ocr_reading.py)
-**What it teaches**: Text extraction with OCR
+**OCR**: Text extraction and search
 
 Learn how to:
-- Use `controller.capture_screen()` convenience method
-- Extract text using OCR
-- Search for specific text on screen
-- Use extraction strategies for better results
+- Capture screenshots
+- Extract all text from screen
+- Search for specific text
+- Find text coordinates
+- Use extraction strategies (`DefaultExtractStrategy`, `RevomonTextStrategy`)
 
-**Run it**:
 ```bash
-uv run python examples/04_ocr_reading.py
+uv run examples/04_ocr_reading.py
 ```
+
+**Requires**: Tesseract OCR installed (see `TESSERACT_INSTALL.md`)
 
 ---
 
 ### [05_custom_app_screens.py](05_custom_app_screens.py)
-**What it teaches**: Organizing complex apps
+**App Structure**: Organizing complex automations
 
 Learn how to:
-- Define apps with multiple screens
-- Add elements to specific screens
-- Structure your automation code
-- Access elements through screens
+- Create apps with multiple screens
+- Add elements to screens
+- Access elements via screens
+- Structure automation code properly
 
-**Run it**:
 ```bash
-uv run python examples/05_custom_app_screens.py
+uv run examples/05_custom_app_screens.py
 ```
 
-**Note**: Demonstration only - replace asset paths with your own button images.
+---
 
-## 🎯 Convenience Methods
+## Element Types
 
-All examples now use the clean API:
+Pymordial supports three element types:
+
+### `PymordialImage`
+Image-based detection using template matching.
 
 ```python
-# ✅ Clean and intuitive
-controller.go_home()
-controller.capture_screen()
-controller.tap(x, y)
-controller.swipe(x1, y1, x2, y2)
-controller.go_back()
-
-#  ❌ Old verbose syntax (still works but not recommended)
-controller.adb.go_home()
-controller.bluestacks.capture_screen()
+button = PymordialImage(
+    label="play_button",
+    filepath=Path("assets/play.png"),
+    confidence=0.8  # 0.0-1.0
+)
 ```
 
-## Tips for Working with Examples
+### `PymordialPixel`
+Fast color-based detection at specific coordinates.
 
-1. **Start Simple**: Begin with `01_basic_connection.py` to verify your setup
-2. **Capture Elements**: Use screenshots to capture UI elements for clicking
-3. **Use Config**: Store timeout values in `config.yaml` instead of hardcoding
-4. **Check Logs**: Set logging level to DEBUG to see what's happening
-5. **Handle Errors**: All examples include basic error handling patterns
+```python
+indicator = PymordialPixel(
+    label="status",
+    position=(100, 50),
+    pixel_color=(255, 255, 255),  # RGB
+    tolerance=10  # 0-255
+)
+```
 
-## Creating Your Own Element Images
+### `PymordialText`
+OCR-based text detection and search.
 
-To click UI elements, you need PNG images of those elements:
+```python
+title = PymordialText(
+    label="game_title",
+    element_text="My Game",
+    position=(0, 0),  # Optional region
+    size=(800, 100)
+)
+```
+
+---
+
+## Tips
+
+1. **Start Simple**: Begin with `01_basic_connection.py` to verify setup
+2. **Capture Assets**: Screenshot and crop UI elements as PNGs
+3. **Use Streaming**: Enable video streaming for faster frame capture
+4. **Adjust Confidence**: Lower for fuzzy matching, higher for precision
+5. **Enable Logging**: Set level to DEBUG to see what's happening
+
+## Creating Element Images
+
+To use `PymordialImage` elements:
 
 1. Take a screenshot of BlueStacks
-2. Crop the button/element you want to click
-3. Save as PNG in `assets/` or your own folder
-4. Reference the path in your `PymordialButton` or `PymordialImage`
+2. Crop the button/element you want to detect
+3. Save as PNG
+4. Reference in your code:
+
+```python
+my_button = PymordialImage(
+    label="my_button",
+    filepath=Path("assets/my_button.png"),
+    confidence=0.8
+)
+```
 
 ## Common Issues
 
-**"No ADB device connected"**
+**"ADB not connected"**
 - Ensure BlueStacks is running
-- Check ADB is enabled in BlueStacks settings
-- Restart BlueStacks
+- Check ADB enabled in BlueStacks settings
+- Try restarting BlueStacks
 
 **"Element not found"**
-- Verify the element is visible on screen
-- Check your asset image matches the current screen resolution
-- Increase the timeout parameter
-- Verify you're using config values for consistency
+- Element must be visible on screen
+- Image resolution must match
+- Try lowering confidence threshold
 
 **"OCR not detecting text"**
-- Text must have good contrast
+- Ensure Tesseract is installed
+- Text needs good contrast
 - Try different extraction strategies
-- Crop the image to focus on the text area
+- Crop to text region
 
 ## Next Steps
 
-After working through these examples:
-- Read the [Quickstart Guide](../docs/QUICKSTART.md)
-- Check the [API Reference](../docs/API_REFERENCE.md)
-- Review the [State Management](../docs/STATE_MANAGEMENT.md) guide
-- Start building your own automation!
+- Review [Quickstart Guide](../README.md#quickstart)
+- Build your own automation!
 
-Happy automating! 🎮💊
+Happy automating! 🎮🤖

@@ -1,31 +1,31 @@
 """Main controller for the Pymordial automation framework."""
 
 import logging
+from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+import numpy as np
+from PIL import Image
 
 from pymordial.controller.adb_controller import AdbController
 from pymordial.controller.bluestacks_controller import BluestacksController
 from pymordial.controller.image_controller import ImageController
-from pymordial.core.extract_strategy import PymordialExtractStrategy
+from pymordial.controller.text_controller import TextController
+from pymordial.core.elements.pymordial_image import PymordialImage
+from pymordial.core.elements.pymordial_pixel import PymordialPixel
+from pymordial.core.elements.pymordial_text import PymordialText
 from pymordial.core.pymordial_element import PymordialElement
+from pymordial.ocr.extract_strategy import PymordialExtractStrategy
 from pymordial.state_machine import BluestacksState
 from pymordial.utils.config import get_config
 
 if TYPE_CHECKING:
-    import numpy as np
-
     from pymordial.core.pymordial_app import PymordialApp
 
 logger = logging.getLogger(__name__)
 
 _CONFIG = get_config()
-
-# --- Click Configuration ---
-DEFAULT_CLICK_TIMES = _CONFIG["controller"]["default_click_times"]
-DEFAULT_MAX_TRIES = _CONFIG["controller"]["default_max_tries"]
-CLICK_COORD_TIMES = _CONFIG["controller"]["click_coord_times"]
-CMD_TAP = _CONFIG["adb"]["commands"]["tap"]
 
 
 class PymordialController:
@@ -36,6 +36,11 @@ class PymordialController:
         image: The ImageController instance.
         bluestacks: The BluestacksController instance.
     """
+
+    DEFAULT_CLICK_TIMES = _CONFIG["controller"]["default_click_times"]
+    DEFAULT_MAX_TRIES = _CONFIG["controller"]["default_max_tries"]
+    CLICK_COORD_TIMES = _CONFIG["controller"]["click_coord_times"]
+    CMD_TAP = _CONFIG["adb"]["commands"]["tap"]
 
     def __init__(
         self,
@@ -51,16 +56,39 @@ class PymordialController:
             apps: Optional list of PymordialApp instances to register.
         """
         self.adb = AdbController(host=adb_host, port=adb_port)
-        self.image = ImageController()
+        self.image = ImageController(self)
+        self.text = TextController()
         self.bluestacks = BluestacksController(
             adb_controller=self.adb, image_controller=self.image
         )
         self._apps: dict[str, "PymordialApp"] = {}
+        self.is_streaming = False
 
         if apps:
             for app in apps:
                 self.add_app(app)
 
+    def __getattr__(self, name: str) -> "PymordialApp":
+        """Enables dot-notation access to registered apps.
+
+        Args:
+            name: The name of the app to access.
+
+        Returns:
+            The registered PymordialApp instance.
+
+        Raises:
+            AttributeError: If the app is not found.
+        """
+        if name in self._apps:
+            return self._apps[name]
+        raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'. "
+            f"Available apps: {list(self._apps.keys())}"
+        )
+
+    # --- Convenience Methods (delegate to sub-controllers) ---
+    ## --- App Management ---
     def add_app(self, app: "PymordialApp") -> None:
         """Registers a PymordialApp instance with this controller.
 
@@ -86,25 +114,6 @@ class PymordialController:
         # Store in registry
         self._apps[sanitized_name] = app
 
-    def __getattr__(self, name: str) -> "PymordialApp":
-        """Enables dot-notation access to registered apps.
-
-        Args:
-            name: The name of the app to access.
-
-        Returns:
-            The registered PymordialApp instance.
-
-        Raises:
-            AttributeError: If the app is not found.
-        """
-        if name in self._apps:
-            return self._apps[name]
-        raise AttributeError(
-            f"'{type(self).__name__}' object has no attribute '{name}'. "
-            f"Available apps: {list(self._apps.keys())}"
-        )
-
     def list_apps(self) -> list[str]:
         """Returns a list of registered app names.
 
@@ -118,6 +127,7 @@ class PymordialController:
         if self.adb.is_connected():
             self.adb.disconnect()
 
+    ## --- Click Methods ---
     def click_coord(
         self,
         coords: tuple[int, int],
@@ -144,9 +154,10 @@ class PymordialController:
                         "ADB device not connected. Skipping 'click_coords' method call."
                     )
                     return False
-                tap_command: str = CMD_TAP.format(x=coords[0], y=coords[1])
-                for _ in range(times - 1):
-                    tap_command += f" && {CMD_TAP.format(x=coords[0], y=coords[1])}"
+                single_tap = PymordialController.CMD_TAP.format(
+                    x=coords[0], y=coords[1]
+                )
+                tap_command = " && ".join([single_tap] * times)
 
                 self.adb.shell_command(tap_command)
                 logger.debug(
@@ -179,15 +190,16 @@ class PymordialController:
                 return False
             case BluestacksState.READY:
                 if not self.adb.is_connected():
-                    logger.warning(
-                        "ADB device not connected. Skipping 'click_element' method call."
-                    )
-                    return False
-                coord: tuple[int, int] | None = self.image.where_element(
-                    pymordial_controller=self,
+                    self.adb.connect()
+                    if not self.adb.is_connected():
+                        logger.warning(
+                            "ADB device not connected. Skipping 'click_element' method call."
+                        )
+                        return False
+                coord: tuple[int, int] | None = self.find_element(
                     pymordial_element=pymordial_element,
                     screenshot_img_bytes=screenshot_img_bytes,
-                    max_retries=max_tries,
+                    max_tries=max_tries,
                 )
                 if not coord:
                     logger.debug(f"UI element {pymordial_element.label} not found")
@@ -230,8 +242,6 @@ class PymordialController:
             for pymordial_element in pymordial_elements
         )
 
-    # --- Convenience Methods (delegate to sub-controllers) ---
-
     def go_home(self) -> None:
         """Navigate to Android home screen.
 
@@ -273,23 +283,147 @@ class PymordialController:
         """
         return self.adb.swipe(start_x, start_y, end_x, end_y, duration)
 
-    def capture_screen(self) -> bytes | None:
+    def capture_screen(self) -> "bytes | np.ndarray | None":
         """Captures the current BlueStacks screen using the appropriate capture strategy.
 
         Returns:
-            The screenshot as bytes, or None if failed.
+            The screenshot as bytes or numpy array, or None if failed.
         """
-        if self.bluestacks.bluestacks_state.current_state == BluestacksState.LOADING:
-            return self.bluestacks.capture_loading_screen()
 
         if not self.adb.is_connected():
-            logger.warning("Cannot capture screen - ADB controller is not initialized")
-            return None
+            self.adb.connect()
+            if not self.adb.is_connected():
+                logger.warning(
+                    "Cannot capture screen - ADB controller is not initialized"
+                )
+                return None
 
-        if self.adb.is_connected():
-            return self.adb.capture_screenshot()
-        logger.warning("Cannot capture screen - ADB controller is not connected")
-        return None
+        if self.is_streaming:
+            frame = self.adb.get_latest_frame()
+            if frame is not None:
+                return frame
+            # If streaming is active but no frame is available yet,
+            # we might want to fallback to ADB screencap or just return None/wait.
+            # For now, let's fallback to ADB screencap to ensure we get *something*.
+            logger.debug(
+                "Streaming active but no frame available. Falling back to ADB screencap."
+            )
+
+        return self.adb.capture_screenshot()
+
+    def find_element(
+        self,
+        pymordial_element: PymordialElement,
+        screenshot_img_bytes: bytes | None = None,
+        max_tries: int = DEFAULT_MAX_TRIES,
+    ) -> tuple[int, int] | None:
+        """Finds the coordinates of a UI element on the screen.
+
+        Args:
+            pymordial_element: The element to find.
+            screenshot_img_bytes: Optional pre-captured screenshot.
+            max_tries: Maximum number of retries.
+
+        Returns:
+            (x, y) coordinates if found, None otherwise.
+        """
+        if isinstance(pymordial_element, PymordialImage):
+            return self.image.where_element(
+                pymordial_element=pymordial_element,
+                screenshot_img_bytes=screenshot_img_bytes,
+                max_tries=max_tries,
+            )
+        elif isinstance(pymordial_element, PymordialText):
+            return self.text.find_text(
+                text_to_find=pymordial_element.element_text,
+                image_path=screenshot_img_bytes or self.capture_screen(),
+                strategy=pymordial_element.extract_strategy,
+            )
+        elif isinstance(pymordial_element, PymordialPixel):
+
+            is_match = self.image.check_pixel_color(
+                pymordial_pixel=pymordial_element,
+                screenshot_img_bytes=screenshot_img_bytes or self.capture_screen(),
+            )
+            return pymordial_element.position if is_match else None
+
+        raise NotImplementedError(
+            f"find_element() not implemented for this element type: {type(pymordial_element)}"
+        )
+
+    def is_element_visible(
+        self,
+        pymordial_element: PymordialElement,
+        screenshot_img_bytes: bytes | None = None,
+        max_tries: int | None = None,
+    ) -> bool:
+        """Checks if a UI element is visible on the screen.
+
+        Args:
+            pymordial_element: The element to check for.
+            screenshot_img_bytes: Optional pre-captured screenshot.
+            max_tries: Optional maximum number of retries.
+
+        Returns:
+            True if the element is found, False otherwise.
+        """
+        if not isinstance(pymordial_element, PymordialElement):
+            raise TypeError(
+                f"pymordial_element must be an instance of PymordialElement, not {type(pymordial_element)}"
+            )
+
+        if isinstance(pymordial_element, PymordialImage):
+            return (
+                self.find_element(
+                    pymordial_element=pymordial_element,
+                    screenshot_img_bytes=screenshot_img_bytes,
+                    max_tries=max_tries or PymordialController.DEFAULT_MAX_TRIES,
+                )
+                is not None
+            )
+        elif isinstance(pymordial_element, PymordialText):
+            # For text, we use the text controller to check existence
+            # Note: This doesn't return coordinates yet, so click_element won't work for Text
+            # unless find_element is implemented for Text.
+
+            image_to_check = screenshot_img_bytes or self.capture_screen()
+
+            # If the element has a defined region, crop the image to that region
+            if pymordial_element.region and image_to_check is not None:
+                try:
+                    if isinstance(image_to_check, bytes):
+                        pil_img = Image.open(BytesIO(image_to_check))
+                    elif isinstance(image_to_check, np.ndarray):
+                        pil_img = Image.fromarray(image_to_check)
+                    else:
+                        pil_img = None
+
+                    if pil_img:
+                        # region is (left, top, right, bottom)
+                        pil_img = pil_img.crop(pymordial_element.region)
+                        image_to_check = np.array(pil_img)
+                except Exception as e:
+                    logger.warning(f"Failed to crop image for text detection: {e}")
+
+            return self.text.check_text(
+                text_to_find=pymordial_element.element_text,
+                image_path=image_to_check,
+                strategy=pymordial_element.extract_strategy,
+                case_sensitive=False,
+            )
+        elif isinstance(pymordial_element, PymordialPixel):
+            return (
+                self.find_element(
+                    pymordial_element=pymordial_element,
+                    screenshot_img_bytes=screenshot_img_bytes,
+                    max_tries=max_tries or PymordialController.DEFAULT_MAX_TRIES,
+                )
+                is not None
+            )
+        else:
+            raise NotImplementedError(
+                f"is_element_visible not implemented for {type(pymordial_element)}"
+            )
 
     # --- Input Methods ---
 
@@ -347,6 +481,7 @@ class PymordialController:
     def read_text(
         self,
         image_path: "Path | bytes | str",
+        case_sensitive: bool = False,
         strategy: "PymordialExtractStrategy | None" = None,
     ) -> list[str]:
         """Read text from an image using OCR.
@@ -358,15 +493,15 @@ class PymordialController:
         Returns:
             List of detected text lines.
 
-        Convenience method that delegates to image.read_text().
+        Convenience method that delegates to text.read_text().
         """
-        return self.image.read_text(image_path, strategy)
+        return self.text.read_text(image_path, case_sensitive, strategy)
 
     def check_text(
         self,
         text_to_find: str,
         image_path: "Path | bytes | str",
-        case_sensitive: bool = True,
+        case_sensitive: bool = False,
         strategy: "PymordialExtractStrategy | None" = None,
     ) -> bool:
         """Check if specific text exists in an image.
@@ -380,9 +515,9 @@ class PymordialController:
         Returns:
             True if text found, False otherwise.
 
-        Convenience method that delegates to image.check_text().
+        Convenience method that delegates to text.check_text().
         """
-        return self.image.check_text(text_to_find, image_path, case_sensitive, strategy)
+        return self.text.check_text(text_to_find, image_path, case_sensitive, strategy)
 
     # --- State Checking Methods ---
 
@@ -396,7 +531,7 @@ class PymordialController:
         """
         return self.bluestacks.is_ready()
 
-    def is_loading(self) -> bool:
+    def is_bluestacks_loading(self) -> bool:
         """Check if BlueStacks is currently loading.
 
         Returns:
@@ -408,7 +543,9 @@ class PymordialController:
 
     # --- Streaming Methods ---
 
-    def start_streaming(self, resolution: int = 1024, bitrate: str = "5M") -> bool:
+    def start_streaming(
+        self, width: int = 1920, height: int = 1080, bitrate: str = "5M"
+    ) -> bool:
         """Start video streaming for real-time frame access.
 
         Blocks until first frame is available or timeout.
@@ -416,8 +553,9 @@ class PymordialController:
         than repeated screenshot capture (16-33ms vs 100-300ms).
 
         Args:
-            resolution: Stream resolution (width=height).
-            bitrate: Stream bitrate (e.g., "4M" for 4 Mbps).
+            width: Stream width. Default is 1920.
+            height: Stream height. Default is 1080.
+            bitrate: Stream bitrate (e.g., "5M" for 5 Mbps). Default is "5M".
 
         Returns:
             True if streaming started successfully, False otherwise.
@@ -428,8 +566,11 @@ class PymordialController:
             >>> if controller.start_streaming():
             ...     frame = controller.get_frame()
             ...     # Process frame for real-time bot logic
+            ...     text = controller.read_text(frame)
         """
-        return self.adb.start_stream(resolution, bitrate)
+        self.is_streaming = self.adb.start_stream(width, height, bitrate)
+
+        return self.is_streaming
 
     def get_frame(self) -> "np.ndarray | None":
         """Get the latest frame from the active stream.
@@ -453,3 +594,12 @@ class PymordialController:
         Convenience method that delegates to adb.stop_stream().
         """
         return self.adb.stop_stream()
+
+    def __repr__(self) -> str:
+        """Returns a string representation of the PymordialController."""
+        return (
+            f"PymordialController("
+            f"apps={len(self.apps)}, "
+            f"adb_connected={self.adb.is_connected()}, "
+            f"bluestacks={self.bluestacks.bluestacks_state.current_state.name})"
+        )

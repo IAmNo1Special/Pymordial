@@ -56,3 +56,12 @@ class PymordialTimeoutError(PymordialError):
     - A timeout occurs during waiting for a state
     - A command execution times out
     """
+
+
+class ElementNotFoundError(PymordialError):
+    """Error raised when an element is not found.
+
+    This exception is raised when:
+    - Attempting to retrieve a non-existent element from a screen
+    - Attempting to remove a non-existent element from a screen
+    """

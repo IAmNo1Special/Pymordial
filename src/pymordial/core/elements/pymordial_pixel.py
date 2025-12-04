@@ -1,74 +1,73 @@
 """Implementation of PymordialPixel element."""
 
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
 
 from pymordial.core.pymordial_element import PymordialElement
 from pymordial.utils.config import get_config
 
-if TYPE_CHECKING:
-    from pymordial.controller.bluestacks_controller import BluestacksController
-    from pymordial.controller.image_controller import ImageController
-
 _CONFIG = get_config()
-PIXEL_SIZE = tuple(_CONFIG["element"]["pixel_size"])
 
 
+@dataclass(kw_only=True)
 class PymordialPixel(PymordialElement):
     """UI element identified by a specific pixel color at a coordinate.
 
     Attributes:
         pixel_color: The expected RGB color tuple (r, g, b).
         tolerance: Color matching tolerance (0-255).
+
+    Note:
+        The size attribute is automatically set to the pixel_size from config
+        and should not be specified by users.
     """
 
-    def __init__(
-        self,
-        label: str,
-        position: tuple[int, int],
-        pixel_color: tuple[int, int, int],
-        bluestacks_resolution: tuple[int, int],
-        tolerance: int = 0,
-    ):
-        """Initializes a PymordialPixel.
+    pixel_color: tuple[int, int, int]
+    tolerance: int = 0
+    # Override parent's size to always be PIXEL_SIZE from config
+    size: tuple[int | float, int | float] = field(init=False)
 
-        Args:
-            label: A unique identifier for the element.
-            position: The (x, y) coordinates of the pixel.
-            pixel_color: The expected RGB color (r, g, b).
-            bluestacks_resolution: The reference window size (width, height).
-            tolerance: Color matching tolerance.
-        """
-        # Pixels have a fixed small size defined in config
-        super().__init__(label, bluestacks_resolution, position, size=PIXEL_SIZE)
-        self.pixel_color = pixel_color
-        self.tolerance = tolerance
+    def __post_init__(self):
+        """Post-initialization processing and validation."""
+        # Override parent's size to always be PIXEL_SIZE from config
+        self.size = tuple(_CONFIG["element"]["pixel_size"])
+        super().__post_init__()
 
-    def match(
-        self,
-        bs_controller: "BluestacksController",
-        image_controller: "ImageController",
-        screenshot: bytes | None = None,
-    ) -> tuple[int, int] | None:
-        """Attempts to find the element by checking pixel color.
+        # Validate pixel_color
+        if not isinstance(self.pixel_color, tuple):
+            raise TypeError(
+                f"Pixel color must be a tuple, not {type(self.pixel_color).__name__}"
+            )
 
-        Args:
-            bs_controller: The BlueStacks controller instance.
-            image_controller: The Image controller instance.
-            screenshot: Optional pre-captured screenshot bytes.
+        if len(self.pixel_color) != 3:
+            raise ValueError(
+                f"Pixel color must have 3 values (r, g, b), got {len(self.pixel_color)}"
+            )
 
-        Returns:
-            The position (x, y) if the color matches, None otherwise.
-        """
-        screen_image = screenshot if screenshot else bs_controller.capture_screen(self)
-        if not screen_image:
-            return None
+        if not all(isinstance(c, int) for c in self.pixel_color):
+            raise TypeError("All pixel color values must be integers")
 
-        # Check if the pixel at self.position matches self.pixel_color
-        is_match = image_controller.check_pixel_color(
-            target_coords=self.position,
-            target_color=self.pixel_color,
-            image=screen_image,
-            tolerance=self.tolerance,
+        if not all(0 <= c <= 255 for c in self.pixel_color):
+            raise ValueError(
+                f"All pixel color values must be between 0 and 255, got {self.pixel_color}"
+            )
+
+        # Validate tolerance
+        if not isinstance(self.tolerance, int):
+            raise TypeError(
+                f"Tolerance must be an integer, not {type(self.tolerance).__name__}"
+            )
+
+        if not (0 <= self.tolerance <= 255):
+            raise ValueError(
+                f"Tolerance must be between 0 and 255, got {self.tolerance}"
+            )
+
+    def __repr__(self) -> str:
+        """Returns a string representation of the pixel element."""
+        return (
+            f"PymordialPixel("
+            f"label='{self.label}', "
+            f"position={self.position}, "
+            f"pixel_color={self.pixel_color}, "
+            f"tolerance={self.tolerance})"
         )
-
-        return self.position if is_match else None

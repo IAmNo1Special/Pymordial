@@ -2,212 +2,146 @@
 
 from unittest.mock import Mock, patch
 
+import pytest
 from PIL import Image
 
 from pymordial.controller.image_controller import ImageController
-from pymordial.core.elements.pymordial_button import PymordialButton
-from pymordial.state_machine import BluestacksState
+from pymordial.core.elements.pymordial_image import PymordialImage
+from pymordial.core.elements.pymordial_pixel import PymordialPixel
 
 
-def test_image_controller_init(mock_config):
+@pytest.fixture
+def mock_pymordial_controller():
+    """Create a mock PymordialController."""
+    controller = Mock()
+    controller.adb = Mock()
+    controller.bluestacks = Mock()
+    controller.adb.capture_screenshot.return_value = b"fake_screenshot"
+    return controller
+
+
+def test_image_controller_init(mock_config, mock_pymordial_controller):
     """Test ImageController initialization."""
-    with patch("pymordial.controller.image_controller.ImageTextChecker"):
-        controller = ImageController()
-        assert controller.img_txt_checker is not None
+    controller = ImageController(mock_pymordial_controller)
+    assert controller.pymordial_controller == mock_pymordial_controller
 
 
-def test_check_text(mock_config):
-    """Test text checking in image."""
-    with patch(
-        "pymordial.controller.image_controller.ImageTextChecker"
-    ) as mock_checker_class:
-        controller = ImageController()
-        mock_checker = mock_checker_class.return_value
-        controller.img_txt_checker = mock_checker
-        mock_checker.check_text.return_value = True
-
-        result = controller.check_text(text_to_find="Hello", image_path=b"fake_image")
-
-        assert result is True
-        mock_checker.check_text.assert_called_once()
-
-
-def test_read_text(mock_config):
-    """Test reading text from image."""
-    with patch(
-        "pymordial.controller.image_controller.ImageTextChecker"
-    ) as mock_checker_class:
-        controller = ImageController()
-        mock_checker = mock_checker_class.return_value
-        controller.img_txt_checker = mock_checker
-        mock_checker.read_text.return_value = "Sample Text"
-
-        result = controller.read_text(image_path=b"fake_image")
-
-        assert result == "Sample Text"
-        mock_checker.read_text.assert_called_once()
-
-
-def test_scale_img_to_screen(mock_config):
+def test_scale_img_to_screen(mock_config, mock_pymordial_controller):
     """Test image scaling to screen."""
-    with patch("pymordial.controller.image_controller.ImageTextChecker"):
-        controller = ImageController()
-        mock_screen = Image.new("RGB", (1280, 720))
-        mock_template = Image.new("RGB", (100, 100))
+    controller = ImageController(mock_pymordial_controller)
+    mock_screen = Image.new("RGB", (1280, 720))
+    mock_template = Image.new("RGB", (100, 100))
 
-        with patch(
-            "pymordial.controller.image_controller.Image.open",
-            return_value=mock_template,
-        ):
-            result = controller.scale_img_to_screen(
-                image_path="template.png",
-                screen_image=mock_screen,
-                bluestacks_resolution=(1280, 720),
-            )
-            assert isinstance(result, Image.Image)
+    with patch(
+        "pymordial.controller.image_controller.Image.open",
+        return_value=mock_template,
+    ):
+        result = controller.scale_img_to_screen(
+            image_path="template.png",
+            screen_image=mock_screen,
+            bluestacks_resolution=(1280, 720),
+        )
+        assert isinstance(result, Image.Image)
 
 
-def test_check_pixel_color_exact_match(mock_config):
+def test_check_pixel_color_exact_match(mock_config, mock_pymordial_controller):
     """Test pixel color checking with exact match."""
-    with patch("pymordial.controller.image_controller.ImageTextChecker"):
-        controller = ImageController()
-        test_image = Image.new("RGB", (100, 100), color=(255, 0, 0))
+    controller = ImageController(mock_pymordial_controller)
 
-        with patch(
-            "pymordial.controller.image_controller.Image.open", return_value=test_image
-        ):
-            result = controller.check_pixel_color(
-                target_coords=(50, 50),
-                target_color=(255, 0, 0),
-                image="test.png",
-                tolerance=0,
-            )
-            assert result is True
+    pixel = PymordialPixel(
+        label="test_pixel",
+        position=(50, 50),
+        pixel_color=(255, 0, 0),
+        tolerance=0,
+    )
+
+    test_image = Image.new("RGB", (100, 100), color=(255, 0, 0))
+
+    with patch(
+        "pymordial.controller.image_controller.Image.open", return_value=test_image
+    ):
+        result = controller.check_pixel_color(
+            pymordial_pixel=pixel,
+            screenshot_img_bytes=b"fake_bytes",
+        )
+        assert result is True
 
 
-def test_check_pixel_color_no_match(mock_config):
+def test_check_pixel_color_no_match(mock_config, mock_pymordial_controller):
     """Test pixel color checking with no match."""
-    with patch("pymordial.controller.image_controller.ImageTextChecker"):
-        controller = ImageController()
-        test_image = Image.new("RGB", (100, 100), color=(255, 0, 0))
+    controller = ImageController(mock_pymordial_controller)
 
-        with patch(
-            "pymordial.controller.image_controller.Image.open", return_value=test_image
-        ):
-            result = controller.check_pixel_color(
-                target_coords=(50, 50),
-                target_color=(0, 255, 0),
-                image="test.png",
-                tolerance=0,
-            )
-            assert result is False
+    pixel = PymordialPixel(
+        label="test_pixel",
+        position=(50, 50),
+        pixel_color=(0, 255, 0),  # Green
+        tolerance=0,
+    )
+
+    test_image = Image.new("RGB", (100, 100), color=(255, 0, 0))  # Red
+
+    with patch(
+        "pymordial.controller.image_controller.Image.open", return_value=test_image
+    ):
+        result = controller.check_pixel_color(
+            pymordial_pixel=pixel,
+            screenshot_img_bytes=b"fake_bytes",
+        )
+        assert result is False
 
 
-def test_check_pixel_color_with_tolerance(mock_config):
+def test_check_pixel_color_with_tolerance(mock_config, mock_pymordial_controller):
     """Test pixel color checking with tolerance."""
-    with patch("pymordial.controller.image_controller.ImageTextChecker"):
-        controller = ImageController()
-        test_image = Image.new("RGB", (100, 100), color=(255, 0, 0))
+    controller = ImageController(mock_pymordial_controller)
 
-        with patch(
-            "pymordial.controller.image_controller.Image.open", return_value=test_image
-        ):
-            result = controller.check_pixel_color(
-                target_coords=(50, 50),
-                target_color=(250, 5, 5),
-                image="test.png",
-                tolerance=10,
-            )
-            assert result is True
+    pixel = PymordialPixel(
+        label="test_pixel",
+        position=(50, 50),
+        pixel_color=(250, 5, 5),
+        tolerance=10,
+    )
 
+    test_image = Image.new("RGB", (100, 100), color=(255, 0, 0))
 
-def test_where_element_found(mock_config):
-    """Test finding element successfully."""
-    with patch("pymordial.controller.image_controller.ImageTextChecker"):
-        controller = ImageController()
-        element = PymordialButton(
-            label="test", asset_path="test.png", bluestacks_resolution=(1280, 720)
+    with patch(
+        "pymordial.controller.image_controller.Image.open", return_value=test_image
+    ):
+        result = controller.check_pixel_color(
+            pymordial_pixel=pixel,
+            screenshot_img_bytes=b"fake_bytes",
         )
-        mock_pymordial_controller = Mock()
-        mock_pymordial_controller.bluestacks.bluestacks_state.current_state = (
-            BluestacksState.READY
-        )
+        assert result is True
 
-        with patch.object(element, "match", return_value=(100, 200)):
+
+def test_where_element_not_found(mock_config, mock_pymordial_controller):
+    """Test where_element when element not found."""
+    controller = ImageController(mock_pymordial_controller)
+
+    image_elem = PymordialImage(
+        label="test",
+        filepath="test.png",
+        confidence=0.8,
+        og_resolution=(1920, 1080),
+    )
+
+    # Create test images
+    mock_screen = Image.new("RGB", (1920, 1080), color=(0, 0, 0))
+    mock_template = Image.new("RGB", (100, 100), color=(255, 255, 255))
+
+    with patch(
+        "pymordial.controller.image_controller.Image.open",
+        return_value=mock_template,
+    ):
+        with patch("pymordial.controller.image_controller.locate", return_value=None):
             result = controller.where_element(
-                pymordial_controller=mock_pymordial_controller,
-                pymordial_element=element,
-            )
-            assert result == (100, 200)
-
-
-def test_where_element_not_found(mock_config):
-    """Test when element is not found."""
-    with patch("pymordial.controller.image_controller.ImageTextChecker"):
-        controller = ImageController()
-        element = PymordialButton(
-            label="test", asset_path="test.png", bluestacks_resolution=(1280, 720)
-        )
-        mock_pymordial_controller = Mock()
-        mock_pymordial_controller.bluestacks.bluestacks_state.current_state = (
-            BluestacksState.READY
-        )
-
-        with patch.object(element, "match", return_value=None):
-            result = controller.where_element(
-                pymordial_controller=mock_pymordial_controller,
-                pymordial_element=element,
-                max_retries=1,
+                pymordial_element=image_elem,
+                screenshot_img_bytes=mock_screen,
             )
             assert result is None
 
 
-def test_where_elements_first_found(mock_config):
-    """Test finding first element from list."""
-    with patch("pymordial.controller.image_controller.ImageTextChecker"):
-        controller = ImageController()
-        element1 = PymordialButton(
-            label="test1", asset_path="test1.png", bluestacks_resolution=(1280, 720)
-        )
-        element2 = PymordialButton(
-            label="test2", asset_path="test2.png", bluestacks_resolution=(1280, 720)
-        )
-
-        mock_pymordial_controller = Mock()
-        mock_pymordial_controller.bluestacks.bluestacks_state.current_state = (
-            BluestacksState.READY
-        )
-
-        # Mock where_element to return result for second element
-        with patch.object(controller, "where_element") as mock_where:
-            mock_where.side_effect = [None, (150, 250)]
-
-            result = controller.where_elements(
-                pymordial_controller=mock_pymordial_controller,
-                ui_elements=[element1, element2],
-            )
-
-            # where_elements returns only coordinates of the found element
-            assert result == (150, 250)
-
-
-def test_where_elements_none_found(mock_config):
-    """Test when no elements are found from list."""
-    with patch("pymordial.controller.image_controller.ImageTextChecker"):
-        controller = ImageController()
-        element1 = PymordialButton(
-            label="test1", asset_path="test1.png", bluestacks_resolution=(1280, 720)
-        )
-
-        mock_pymordial_controller = Mock()
-        mock_pymordial_controller.bluestacks.bluestacks_state.current_state = (
-            BluestacksState.READY
-        )
-
-        with patch.object(controller, "where_element", return_value=None):
-            result = controller.where_elements(
-                pymordial_controller=mock_pymordial_controller,
-                ui_elements=[element1],
-                max_tries=1,
-            )
-            assert result is None
+def test_image_controller_repr(mock_config, mock_pymordial_controller):
+    """Test string representation."""
+    controller = ImageController(mock_pymordial_controller)
+    repr_str = repr(controller)
+    assert "ImageController" in repr_str

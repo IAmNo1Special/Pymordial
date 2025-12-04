@@ -3,6 +3,9 @@
 from unittest.mock import Mock, patch
 
 import pytest
+
+from pymordial.core.elements.pymordial_image import PymordialImage
+from pymordial.core.elements.pymordial_text import PymordialText
 from pymordial.core.pymordial_app import PymordialApp
 from pymordial.state_machine import AppLifecycleState
 
@@ -15,6 +18,7 @@ def test_pymordial_app_init_success(mock_config):
     assert app.pymordial_controller is None
     assert app.screens == {}
     assert app.app_state.current_state == AppLifecycleState.CLOSED
+    assert app.ready_element is None
 
 
 def test_pymordial_app_init_with_screens(mock_config):
@@ -25,6 +29,17 @@ def test_pymordial_app_init_with_screens(mock_config):
     app = PymordialApp(app_name="TestApp", package_name="com.test.app", screens=screens)
     assert "main" in app.screens
     assert app.screens["main"].name == "main"
+
+
+def test_pymordial_app_init_with_ready_element(mock_config):
+    """Test app initialization with ready_element."""
+    ready_elem = PymordialText(label="ready", element_text="Welcome")
+    app = PymordialApp(
+        app_name="TestApp",
+        package_name="com.test.app",
+        ready_element=ready_elem,
+    )
+    assert app.ready_element == ready_elem
 
 
 def test_pymordial_app_init_invalid_app_name(mock_config):
@@ -67,7 +82,6 @@ def test_open_with_controller(mock_config, mock_adb_controller):
     controller.adb = mock_adb_controller
     app.pymordial_controller = controller
 
-    # Only call open() once inside the patch
     with patch.object(controller.adb, "open_app") as mock_open:
         app.open()
         mock_open.assert_called()
@@ -127,34 +141,10 @@ def test_is_closed(mock_config):
     assert not app.is_closed()
 
 
-def test_is_element_visible_without_controller(mock_config):
-    """Test is_element_visible without controller raises ValueError."""
-    from pymordial.core.elements.pymordial_button import PymordialButton
-
+def test_app_repr(mock_config):
+    """Test string representation."""
     app = PymordialApp(app_name="TestApp", package_name="com.test.app")
-    element = PymordialButton(
-        label="test", asset_path="test.png", bluestacks_resolution=(1280, 720)
-    )
-    with pytest.raises(ValueError, match="pymordial_controller is not initialized"):
-        app.is_element_visible(element)
-
-
-def test_is_element_visible_with_controller(mock_config):
-    """Test is_element_visible with controller."""
-    from pymordial.controller.pymordial_controller import PymordialController
-    from pymordial.core.elements.pymordial_button import PymordialButton
-
-    app = PymordialApp(app_name="TestApp", package_name="com.test.app")
-    element = PymordialButton(
-        label="test", asset_path="test.png", bluestacks_resolution=(1280, 720)
-    )
-
-    controller = Mock(spec=PymordialController)
-    controller.image = Mock()
-    controller.bluestacks = Mock()
-    controller.image.where_element.return_value = (100, 100)
-    app.pymordial_controller = controller
-
-    result = app.is_element_visible(element)
-    assert result is True
-    controller.image.where_element.assert_called_once()
+    repr_str = repr(app)
+    assert "PymordialApp" in repr_str
+    assert "TestApp" in repr_str
+    assert "com.test.app" in repr_str

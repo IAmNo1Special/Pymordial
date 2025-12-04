@@ -1,161 +1,100 @@
 """Tests for PymordialImage element."""
 
-from unittest.mock import Mock, patch
+from pathlib import Path
 
-from PIL import Image
+import pytest
+
 from pymordial.core.elements.pymordial_image import PymordialImage
 
 
 def test_pymordial_image_init(mock_config):
     """Test image element initialization."""
-    # Since the module loads the real config at import time, we expect the value from your config.yaml
-    image_elem = PymordialImage(
-        label="TestImage", asset_path="test.png", bluestacks_resolution=(1280, 720)
+    image = PymordialImage(
+        label="TestImage",
+        filepath="test.png",
+        confidence=0.8,
     )
 
-    assert image_elem.label == "testimage"
-    assert image_elem.asset_path == "test.png"
-    assert image_elem.bluestacks_resolution == (1280, 720)
-    assert image_elem.confidence == 0.7  # Matches your config.yaml
+    assert image.label == "testimage"  # Labels are lowercase
+    assert image.filepath == Path("test.png").resolve()
+    assert image.confidence == 0.8
+    assert image.og_resolution == (1920, 1080)  # Default from config
 
 
 def test_pymordial_image_with_custom_confidence(mock_config):
     """Test image with custom confidence."""
-    image_elem = PymordialImage(
+    image = PymordialImage(
         label="logo",
-        asset_path="logo.png",
-        bluestacks_resolution=(1280, 720),
+        filepath="logo.png",
         confidence=0.85,
     )
+    assert image.confidence == 0.85
 
-    assert image_elem.confidence == 0.85
 
-
-def test_pymordial_image_match_success(mock_config):
-    """Test successful image matching."""
-    image_elem = PymordialImage(
-        label="button", asset_path="button.png", bluestacks_resolution=(1280, 720)
+def test_pymordial_image_with_og_resolution(mock_config):
+    """Test image with custom og_resolution."""
+    image = PymordialImage(
+        label="button",
+        filepath="button.png",
+        confidence=0.8,
+        og_resolution=(1280, 720),
     )
-
-    mock_bs_controller = Mock()
-    mock_image_controller = Mock()
-
-    screenshot = b"fake_screenshot"
-    mock_bs_controller.capture_screen.return_value = screenshot
-    mock_bs_controller.ref_window_size = (1280, 720)
-
-    mock_haystack = Image.new("RGB", (1280, 720))
-    mock_needle = Image.new("RGB", (50, 50))
-    mock_image_controller.scale_img_to_screen.return_value = mock_needle
-
-    with patch(
-        "pymordial.core.elements.pymordial_image.Image.open", return_value=mock_haystack
-    ):
-        with patch("pymordial.core.elements.pymordial_image.locate") as mock_locate:
-            with patch("pymordial.core.elements.pymordial_image.center") as mock_center:
-                mock_locate.return_value = (100, 200, 150, 250)
-                mock_center.return_value = (125, 225)
-
-                result = image_elem.match(mock_bs_controller, mock_image_controller)
-
-                assert result == (125, 225)
-                mock_locate.assert_called_once()
+    assert image.og_resolution == (1280, 720)
 
 
-def test_pymordial_image_match_not_found(mock_config):
-    """Test image matching when element not found."""
-    image_elem = PymordialImage(
-        label="button", asset_path="button.png", bluestacks_resolution=(1280, 720)
+def test_pymordial_image_with_position_and_size(mock_config):
+    """Test image with position and size."""
+    image = PymordialImage(
+        label="icon",
+        filepath="icon.png",
+        confidence=0.9,
+        position=(100, 200),
+        size=(50, 50),
     )
-
-    mock_bs_controller = Mock()
-    mock_image_controller = Mock()
-
-    screenshot = b"fake_screenshot"
-    mock_bs_controller.capture_screen.return_value = screenshot
-    mock_bs_controller.ref_window_size = (1280, 720)
-
-    mock_haystack = Image.new("RGB", (1280, 720))
-    mock_needle = Image.new("RGB", (50, 50))
-    mock_image_controller.scale_img_to_screen.return_value = mock_needle
-
-    with patch(
-        "pymordial.core.elements.pymordial_image.Image.open", return_value=mock_haystack
-    ):
-        with patch("pymordial.core.elements.pymordial_image.locate") as mock_locate:
-            mock_locate.return_value = None
-
-            result = image_elem.match(mock_bs_controller, mock_image_controller)
-
-            assert result is None
+    assert image.position == (100, 200)
+    assert image.size == (50, 50)
+    assert image.center == (125, 225)
+    assert image.region == (100, 200, 150, 250)
 
 
-def test_pymordial_image_match_with_exception(mock_config):
-    """Test image matching with exception during locate."""
-    image_elem = PymordialImage(
-        label="button", asset_path="button.png", bluestacks_resolution=(1280, 720)
+def test_pymordial_image_with_image_text(mock_config):
+    """Test image with optional image_text field."""
+    image = PymordialImage(
+        label="button",
+        filepath="button.png",
+        confidence=0.8,
+        image_text="Click Me",
     )
-
-    mock_bs_controller = Mock()
-    mock_image_controller = Mock()
-
-    screenshot = b"fake_screenshot"
-    mock_bs_controller.capture_screen.return_value = screenshot
-    mock_bs_controller.ref_window_size = (1280, 720)
-
-    mock_haystack = Image.new("RGB", (1280, 720))
-    mock_needle = Image.new("RGB", (50, 50))
-    mock_image_controller.scale_img_to_screen.return_value = mock_needle
-
-    with patch(
-        "pymordial.core.elements.pymordial_image.Image.open", return_value=mock_haystack
-    ):
-        with patch("pymordial.core.elements.pymordial_image.locate") as mock_locate:
-            mock_locate.side_effect = Exception("Locate failed")
-
-            result = image_elem.match(mock_bs_controller, mock_image_controller)
-
-            assert result is None
+    assert image.image_text == "click me"  # Lowercase
 
 
-def test_pymordial_image_match_no_screenshot(mock_config):
-    """Test image matching when screenshot capture fails."""
-    image_elem = PymordialImage(
-        label="button", asset_path="button.png", bluestacks_resolution=(1280, 720)
+def test_pymordial_image_confidence_validation(mock_config):
+    """Test confidence must be between 0 and 1."""
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        PymordialImage(
+            label="test",
+            filepath="test.png",
+            confidence=1.5,
+        )
+
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        PymordialImage(
+            label="test",
+            filepath="test.png",
+            confidence=-0.1,
+        )
+
+
+def test_pymordial_image_repr(mock_config):
+    """Test string representation."""
+    image = PymordialImage(
+        label="button",
+        filepath="button.png",
+        confidence=0.8,
+        position=(100, 200),
+        size=(50, 30),
     )
-
-    mock_bs_controller = Mock()
-    mock_image_controller = Mock()
-    mock_bs_controller.capture_screen.return_value = None
-
-    result = image_elem.match(mock_bs_controller, mock_image_controller)
-
-    assert result is None
-
-
-def test_pymordial_image_match_with_provided_screenshot(mock_config):
-    """Test image matching with pre-provided screenshot."""
-    image_elem = PymordialImage(
-        label="button", asset_path="button.png", bluestacks_resolution=(1280, 720)
-    )
-
-    mock_bs_controller = Mock()
-    mock_image_controller = Mock()
-    mock_bs_controller.ref_window_size = (1280, 720)
-
-    screenshot = b"provided_screenshot"
-    mock_haystack = Image.new("RGB", (1280, 720))
-    mock_needle = Image.new("RGB", (50, 50))
-    mock_image_controller.scale_img_to_screen.return_value = mock_needle
-
-    with patch(
-        "pymordial.core.elements.pymordial_image.Image.open", return_value=mock_haystack
-    ):
-        with patch("pymordial.core.elements.pymordial_image.locate") as mock_locate:
-            mock_locate.return_value = None
-
-            image_elem.match(
-                mock_bs_controller, mock_image_controller, screenshot=screenshot
-            )
-
-            mock_bs_controller.capture_screen.assert_not_called()
+    repr_str = repr(image)
+    assert "PymordialImage" in repr_str
+    assert "button" in repr_str
+    assert "0.8" in repr_str

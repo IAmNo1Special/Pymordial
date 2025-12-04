@@ -128,12 +128,12 @@ def mock_adb_controller(mock_adb_device, mock_config):
 @pytest.fixture
 def mock_image_controller(mock_config):
     """Returns an ImageController with mocked dependencies."""
-    with patch(
-        "pymordial.controller.image_controller.ImageTextChecker"
-    ) as mock_checker:
-        controller = ImageController()
-        controller.img_txt_checker = mock_checker.return_value
-        return controller
+    mock_pymordial = Mock()
+    mock_pymordial.adb = Mock()
+    mock_pymordial.bluestacks = Mock()
+
+    controller = ImageController(mock_pymordial)
+    return controller
 
 
 @pytest.fixture

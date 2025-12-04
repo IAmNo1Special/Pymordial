@@ -10,9 +10,9 @@ from pymordial.controller import (
     BluestacksElements,
     ImageController,
     PymordialController,
+    TextController,
 )
 from pymordial.core import PymordialApp, PymordialElement, PymordialScreen
-from pymordial.core.elements.pymordial_button import PymordialButton
 from pymordial.core.elements.pymordial_image import PymordialImage
 from pymordial.core.elements.pymordial_pixel import PymordialPixel
 from pymordial.core.elements.pymordial_text import PymordialText
@@ -25,14 +25,12 @@ from pymordial.exceptions import (
     PymordialTimeoutError,
 )
 from pymordial.state_machine import AppLifecycleState, BluestacksState, StateMachine
-from pymordial.utils.image_text_checker import ImageTextChecker
 
 __all__ = [
     "AdbController",
     "AppLifecycleState",
     "PymordialApp",
     "PymordialAppError",
-    "PymordialButton",
     "PymordialConnectionError",
     "PymordialController",
     "PymordialElement",
@@ -48,8 +46,8 @@ __all__ = [
     "BluestacksElements",
     "BluestacksState",
     "ImageController",
-    "ImageTextChecker",
+    "TextController",
     "StateMachine",
 ]
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"

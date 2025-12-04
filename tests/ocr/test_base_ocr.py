@@ -9,6 +9,9 @@ class ConcreteOCR(PymordialOCR):
     def extract_text(self, image):
         return "Mock OCR Text"
 
+    def find_text(self, search_text, image_path):
+        return (0, 0)
+
 
 def test_base_pymordial_ocr_abstract():
     """Test that BasePymordialOCR is abstract."""
