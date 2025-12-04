@@ -1,6 +1,6 @@
 [project]
 name = "pymordial"
-version = "0.2"
+version = "0.2.0"
 description = "A Python library designed to control BlueStacks through ADB commands, enabling seamless automation and management of Android applications on a PC."
 readme = "README.md"
 authors = [

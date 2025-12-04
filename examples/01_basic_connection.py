@@ -1,13 +1,10 @@
 """Basic BlueStacks connection example.
 
 This script demonstrates how to:
-1. Create a PymordialController (connection is automatic!)
-2. Check connection status
+1. Create a PymordialController
+2. Connect to BlueStacks via ADB
 3. Execute shell commands
 4. Disconnect cleanly
-
-Note: ADB connection happens automatically via the state machine.
-You don't need to manually call connect() in normal usage.
 """
 
 from logging import INFO, basicConfig, getLogger
@@ -22,41 +19,42 @@ def main():
     basicConfig(level=INFO)
     logger.info("=== Pymordial Basic Connection Example ===\n")
 
-    # Create controller - this automatically:
-    # 1. Discovers BlueStacks
-    # 2. Opens BlueStacks if needed
-    # 3. Connects ADB (via state machine handler)
+    # Create controller - BlueStacks must be running
     logger.info("1. Creating PymordialController...")
     controller = PymordialController()
-    if controller:
-        controller.bluestacks.open()
-        logger.info("   ✓ Controller created (ADB connected automatically)")
-    else:
-        logger.info("   ✗ Controller failed initialization!!!")
-        return
+    logger.info("   ✓ Controller created\n")
 
-    # Check connection status
-    logger.info("\n2. Verifying ADB connection...")
+    # Check if BlueStacks is running
+    logger.info("2. Checking BlueStacks status...")
+    if controller.bluestacks.is_ready():
+        logger.info("   ✓ BlueStacks is running and ready")
+    else:
+        logger.info("   ⚠ BlueStacks not ready. Opening...")
+        controller.bluestacks.open()
+
+    # Verify ADB connection
+    logger.info("\n3. Verifying ADB connection...")
     if controller.adb.is_connected():
         logger.info("   ✓ ADB is connected")
     else:
-        logger.info("   ✗ ADB not connected. Is BlueStacks running?")
+        logger.error("   ✗ ADB not connected. Please check BlueStacks.")
         return
 
-    # Get device info via shell command
-    logger.info("\n3. Getting device info...")
-    result = controller.shell_command("getprop ro.build.version.release")
+    # Get Android version via shell command
+    logger.info("\n4. Getting Android version...")
+    result = controller.adb.shell_command("getprop ro.build.version.release")
     if result:
         android_version = result.decode("utf-8").strip()
         logger.info(f"   Android Version: {android_version}")
 
-    # Disconnect (optional - usually not needed)
-    logger.info("\n4. Disconnecting...")
-    controller.adb.disconnect()
-    logger.info("   ✓ Disconnected\n")
+    # Get device model
+    logger.info("\n5. Getting device model...")
+    result = controller.adb.shell_command("getprop ro.product.model")
+    if result:
+        device_model = result.decode("utf-8").strip()
+        logger.info(f"   Device Model: {device_model}")
 
-    logger.info("Tip: Connection usually happens automatically!")
-    logger.info("Example completed successfully!")
+    logger.info("\n✓ Example completed successfully!\n")
 
 
 if __name__ == "__main__":

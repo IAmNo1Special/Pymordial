@@ -16,7 +16,7 @@ class PymordialImage(PymordialElement):
     Attributes:
         filepath: Absolute path of the element's image.
         confidence: Matching confidence threshold (0.0 to 1.0).
-        known_text: Optional known text that the element contains.
+        image_text: Optional known text that the image contains.
     """
 
     filepath: str | Path
@@ -53,3 +53,14 @@ class PymordialImage(PymordialElement):
                     f"Image text must be a string, not {type(self.image_text).__name__}"
                 )
             self.image_text = self.image_text.lower()
+
+    def __repr__(self) -> str:
+        """Returns a string representation of the image element."""
+        return (
+            f"PymordialImage("
+            f"label='{self.label}', "
+            f"filepath='{self.filepath}', "
+            f"confidence={self.confidence}, "
+            f"position={self.position}, "
+            f"size={self.size})"
+        )

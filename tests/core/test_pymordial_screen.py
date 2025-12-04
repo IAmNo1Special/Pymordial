@@ -1,6 +1,6 @@
 """Tests for PymordialScreen."""
 
-from pymordial.core.elements.pymordial_button import PymordialButton
+from pymordial.core.elements.pymordial_image import PymordialImage
 from pymordial.core.pymordial_screen import PymordialScreen
 
 
@@ -14,8 +14,8 @@ def test_pymordial_screen_init(mock_config):
 
 def test_pymordial_screen_init_with_elements(mock_config):
     """Test screen initialization with elements."""
-    button = PymordialButton(
-        label="start", asset_path="start.png", bluestacks_resolution=(1280, 720)
+    button = PymordialImage(
+        label="start", filepath="start.png", og_resolution=(1280, 720), confidence=0.8
     )
     elements = {"start": button}
 
@@ -28,8 +28,11 @@ def test_pymordial_screen_init_with_elements(mock_config):
 def test_add_element(mock_config):
     """Test adding an element to screen."""
     screen = PymordialScreen(name="MainScreen")
-    button = PymordialButton(
-        label="PlayButton", asset_path="play.png", bluestacks_resolution=(1280, 720)
+    button = PymordialImage(
+        label="PlayButton",
+        filepath="play.png",
+        og_resolution=(1280, 720),
+        confidence=0.8,
     )
 
     screen.add_element(button)

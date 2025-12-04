@@ -2,77 +2,96 @@
 
 This script demonstrates how to:
 1. Capture screenshots
-2. Extract text using OCR
+2. Extract text using OCR (Tesseract)
 3. Use extraction strategies for better results
 4. Search for specific text on screen
+5. Find text coordinates
 """
 
+from logging import INFO, basicConfig, getLogger
+
 from pymordial.controller.pymordial_controller import PymordialController
-from pymordial.core.extract_strategy import RevomonTextStrategy
+from pymordial.ocr.extract_strategy import DefaultExtractStrategy, RevomonTextStrategy
+
+logger = getLogger(__name__)
 
 
 def main():
     """Read text from screen using OCR."""
-    print("=== Pymordial OCR Reading Example ===\n")
+    basicConfig(level=INFO)
+    logger.info("=== Pymordial OCR Reading Example ===\n")
 
-    # Create and initialize controller
-    print("1. Creating PymordialController...")
+    # Create controller
+    logger.info("1. Creating PymordialController...")
     controller = PymordialController()
 
-    print("Opening Bluestacks...")
-    controller.bluestacks.open()
-
-    # Go to home screen (has visible text)
-    print("2. Navigating to home screen...")
-    controller.go_home()
+    if not controller.bluestacks.is_ready():
+        controller.bluestacks.open()
+    logger.info("   ✓ BlueStacks ready\n")
 
     # Capture screenshot
-    print("3. Capturing screenshot...")
+    logger.info("2. Capturing screenshot...")
     screenshot = controller.capture_screen()
 
     if screenshot:
-        print("   ✓ Screenshot captured")
+        logger.info("   ✓ Screenshot captured\n")
     else:
-        print("   ✗ Failed to capture screenshot")
+        logger.error("   ✗ Failed to capture screenshot")
         return
 
-    # Extract text using default OCR
-    print("4. Extracting text with OCR...")
-    text_lines = controller.read_text(screenshot)
+    # Example 1: Extract all text using default OCR
+    logger.info("3. Extracting all text (default OCR)...")
+    text_lines = controller.text.read_text(screenshot)
 
-    print(f"   Found {len(text_lines)} lines of text:")
-    for i, line in enumerate(text_lines[:10], 1):  # Show first 10 lines
-        print(f"     {i}. {line}")
+    logger.info(f"   Found {len(text_lines)} lines of text:")
+    for i, line in enumerate(text_lines[:5], 1):  # Show first 5 lines
+        logger.info(f"     {i}. {line}")
 
-    if len(text_lines) > 10:
-        print(f"     ... and {len(text_lines) - 10} more lines")
+    if len(text_lines) > 5:
+        logger.info(f"     ... and {len(text_lines) - 5} more lines")
 
-    # Search for specific text
-    print("\n5. Searching for specific text...")
+    # Example 2: Search for specific text
+    logger.info("\n4. Searching for specific text...")
     search_term = "store"
-    found = controller.check_text(
-        screenshot, text_to_find=search_term, case_sensitive=False
+    found = controller.text.check_text(
+        text_to_find=search_term, image_path=screenshot, case_sensitive=False
     )
 
     if found:
-        print(f"   ✓ Found '{search_term}' on screen")
+        logger.info(f"   ✓ Found '{search_term}' on screen")
     else:
-        print(f"   ✗ '{search_term}' not found")
+        logger.info(f"   ✗ '{search_term}' not found")
 
-    # Using a custom strategy (example with Revomon strategy)
-    print("\n6. Using custom extraction strategy...")
-    strategy = RevomonTextStrategy(mode="default")
-    custom_text = controller.read_text(screenshot, strategy=strategy)
+    # Example 3: Find text coordinates
+    logger.info("\n5. Finding text coordinates...")
+    coords = controller.text.find_text(text_to_find=search_term, image_path=screenshot)
 
-    print(f"   Extracted {len(custom_text)} lines with custom strategy")
+    if coords:
+        logger.info(f"   ✓ Found '{search_term}' at coordinates: {coords}")
+    else:
+        logger.info(f"   ✗ Coordinates not found for '{search_term}'")
 
-    print("\nTips:")
-    print("  • OCR works best on clear, high-contrast text")
-    print("  • Use extraction strategies for game-specific formatting")
-    print("  • Case-insensitive search is more reliable")
-    print("  • Pre-process images (crop/enhance) for better results\n")
+    # Example 4: Using custom extraction strategy
+    logger.info("\n6. Using default extraction strategy...")
+    strategy = DefaultExtractStrategy()
+    custom_text = controller.text.read_text(screenshot, strategy=strategy)
 
-    print("Example completed!")
+    logger.info(f"   Extracted {len(custom_text)} lines with strategy")
+
+    # Example 5: Game-specific strategy (if using Revomon)
+    logger.info("\n7. Using Revomon-specific strategy...")
+    revomon_strategy = RevomonTextStrategy(mode="default")
+    revomon_text = controller.text.read_text(screenshot, strategy=revomon_strategy)
+
+    logger.info(f"   Extracted {len(revomon_text)} lines with Revomon strategy")
+
+    logger.info("\n✓ Example completed!\n")
+    logger.info("Tips:")
+    logger.info("  • OCR works best on clear, high-contrast text")
+    logger.info("  • Use extraction strategies for game-specific formatting")
+    logger.info("  • Case-insensitive search is more reliable")
+    logger.info("  • Crop to specific regions for better accuracy")
+    logger.info("  • Create custom strategies for your game's UI")
 
 
 if __name__ == "__main__":

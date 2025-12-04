@@ -16,11 +16,14 @@ class TestConvenienceMethods:
         with (
             patch("pymordial.controller.pymordial_controller.AdbController"),
             patch("pymordial.controller.pymordial_controller.ImageController"),
+            patch("pymordial.controller.pymordial_controller.TextController"),
             patch("pymordial.controller.pymordial_controller.BluestacksController"),
         ):
             controller = PymordialController()
             # Mock the sub-controllers
             controller.adb = Mock()
+            controller.image = Mock()
+            controller.text = Mock()
             controller.bluestacks = Mock()
             return controller
 
@@ -109,14 +112,16 @@ class TestConvenienceMethods:
         controller.adb.get_current_app.assert_called_once()
         assert result == mock_package
 
-    def test_read_text_delegates_to_image(self, controller):
-        """Test that read_text() delegates to image.read_text()."""
+    def test_read_text_delegates_to_text_controller(self, controller):
+        """Test that read_text() delegates to text.read_text()."""
         mock_text = ["Line 1", "Line 2", "Line 3"]
-        controller.image.read_text.return_value = mock_text
+        controller.text.read_text.return_value = mock_text
 
         result = controller.read_text(b"screenshot_bytes")
 
-        controller.image.read_text.assert_called_once_with(b"screenshot_bytes", None)
+        controller.text.read_text.assert_called_once_with(
+            b"screenshot_bytes", False, None
+        )
         assert result == mock_text
 
     def test_read_text_with_strategy(self, controller):
@@ -125,20 +130,22 @@ class TestConvenienceMethods:
 
         mock_strategy = Mock()
         mock_text = ["Text with strategy"]
-        controller.image.read_text.return_value = mock_text
+        controller.text.read_text.return_value = mock_text
 
         result = controller.read_text("image.png", strategy=mock_strategy)
 
-        controller.image.read_text.assert_called_once_with("image.png", mock_strategy)
+        controller.text.read_text.assert_called_once_with(
+            "image.png", False, mock_strategy
+        )
         assert result == mock_text
 
-    def test_check_text_delegates_to_image(self, controller):
-        """Test that check_text() delegates to image.check_text()."""
-        controller.image.check_text.return_value = True
+    def test_check_text_delegates_to_text_controller(self, controller):
+        """Test that check_text() delegates to text.check_text()."""
+        controller.text.check_text.return_value = True
 
         result = controller.check_text("Victory", b"screenshot", case_sensitive=False)
 
-        controller.image.check_text.assert_called_once_with(
+        controller.text.check_text.assert_called_once_with(
             "Victory", b"screenshot", False, None
         )
         assert result is True
@@ -153,10 +160,10 @@ class TestConvenienceMethods:
         assert result is True
 
     def test_is_loading_delegates_to_bluestacks(self, controller):
-        """Test that is_loading() delegates to bluestacks.is_loading()."""
+        """Test that is_bluestacks_loading() delegates to bluestacks.is_loading()."""
         controller.bluestacks.is_loading.return_value = False
 
-        result = controller.is_loading()
+        result = controller.is_bluestacks_loading()
 
         controller.bluestacks.is_loading.assert_called_once()
         assert result is False

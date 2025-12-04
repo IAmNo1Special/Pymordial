@@ -24,12 +24,12 @@ class PymordialPixel(PymordialElement):
     pixel_color: tuple[int, int, int]
     tolerance: int = 0
     # Override parent's size to always be PIXEL_SIZE from config
-    size: tuple[int | float, int | float] = field(
-        default_factory=lambda: tuple(_CONFIG["element"]["pixel_size"])
-    )
+    size: tuple[int | float, int | float] = field(init=False)
 
     def __post_init__(self):
         """Post-initialization processing and validation."""
+        # Override parent's size to always be PIXEL_SIZE from config
+        self.size = tuple(_CONFIG["element"]["pixel_size"])
         super().__post_init__()
 
         # Validate pixel_color
@@ -61,3 +61,13 @@ class PymordialPixel(PymordialElement):
             raise ValueError(
                 f"Tolerance must be between 0 and 255, got {self.tolerance}"
             )
+
+    def __repr__(self) -> str:
+        """Returns a string representation of the pixel element."""
+        return (
+            f"PymordialPixel("
+            f"label='{self.label}', "
+            f"position={self.position}, "
+            f"pixel_color={self.pixel_color}, "
+            f"tolerance={self.tolerance})"
+        )

@@ -23,7 +23,7 @@ adb:
     esc: 4
     app_switch: "KEYCODE_APP_SWITCH"
   commands:
-    screenrecord: "screenrecord --output-format=h264 --size {resolution}x{resolution} --bit-rate {bitrate} --time-limit {time_limit} -"
+    screenrecord: "screenrecord --output-format=h264 --size {width}x{height} --bit-rate {bitrate} --time-limit {time_limit} -"
     dumpsys_focus: "dumpsys window windows | grep -E 'mCurrentFocus' | grep {package_name}"
     force_stop: "am force-stop {package_name}"
     screencap: "screencap -p"
@@ -56,6 +56,8 @@ image_controller:
 app:
   action_timeout: 60
   action_wait_time: 10
+  ready_check_max_tries: 3
+  close_wait_time: 1
 element:
   default_confidence: 0.7
   pixel_size: [1, 1]

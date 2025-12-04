@@ -96,3 +96,11 @@ class PymordialScreen:
             raise ElementNotFoundError(
                 f"Element '{label}' not found on screen '{self.name}'"
             )
+
+    def __repr__(self) -> str:
+        """Returns a string representation of the screen."""
+        return (
+            f"PymordialScreen("
+            f"name='{self.name}', "
+            f"elements={str(self.elements)})"
+        )
