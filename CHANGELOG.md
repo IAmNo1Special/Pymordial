@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-12-04
+
+### Added
+- **Real-Time Streaming API**: `start_streaming()`, `get_frame()`, `stop_streaming()` for low-latency frame access.
+- **Convenience Methods**: `capture_screen()`, `click_element()`, `read_text()`, `check_text()` on `PymordialController`.
+- **3-Tier Project Intelligence Docs**: `.protel/` directory with stakeholder, junior dev, and architect documentation.
+
+### Changed
+- **Element Dataclasses**: All elements now use `@dataclass(kw_only=True)` with comprehensive `__post_init__` validation.
+- **Renamed Parameters**: `bluestacks_resolution` → `og_resolution`, `asset_path` → `filepath`.
+- **Renamed `ImageTextChecker`** → `TextController` for clarity.
+- **Moved `extract_strategy.py`** from `core/` to `ocr/` module.
+
+### Removed
+- **`PymordialButton`**: Deprecated element type. Use `PymordialImage` instead.
+- **`.match()` Method**: Removed from elements. Use `ImageController.where_element()` instead.
+
+### Fixed
+- Integration test fixtures now properly skip when BlueStacks/ADB unavailable.
+- All 163 tests passing.
+
 ## [0.1.1] - 2025-11-30
 
 ### Added
