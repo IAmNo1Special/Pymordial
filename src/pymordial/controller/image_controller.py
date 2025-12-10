@@ -9,7 +9,6 @@ import numpy as np
 from adb_shell.exceptions import TcpTimeoutException
 from PIL import Image
 from pyautogui import ImageNotFoundException, center, locate
-
 from pymordial.core.elements.pymordial_image import PymordialImage
 from pymordial.core.elements.pymordial_pixel import PymordialPixel
 from pymordial.core.pymordial_element import PymordialElement
@@ -85,13 +84,13 @@ class ImageController:
     def check_pixel_color(
         self,
         pymordial_pixel: PymordialPixel,
-        screenshot_img_bytes: "bytes | np.ndarray | None" = None,
+        pymordial_screenshot: "bytes | np.ndarray | None" = None,
     ) -> bool | None:
         """Checks if the pixel at (x, y) matches the target color within a tolerance.
 
         Args:
             pymordial_pixel: The PymordialPixel to check.
-            screenshot_img_bytes: The screenshot image bytes or numpy array.
+            pymordial_screenshot: The screenshot image bytes or numpy array.
 
         Returns:
             True if the pixel matches, False otherwise.
@@ -106,6 +105,25 @@ class ImageController:
             """Check if two colors are within a certain tolerance."""
             return all(abs(c1 - c2) <= tolerance for c1, c2 in zip(color1, color2))
 
+        # Capture screen if we don't have an image to check
+        if pymordial_screenshot is None:
+            # Ensures PymordialController's ADB is connected
+            if not self.pymordial_controller.adb.is_connected():
+                self.pymordial_controller.adb.connect()
+                if not self.pymordial_controller.adb.is_connected():
+                    raise ValueError("PymordialController's ADB is not connected")
+
+            try:
+                pymordial_screenshot = self.pymordial_controller.capture_screen()
+                if pymordial_screenshot is None:
+                    logger.warning("Failed to capture screen.")
+            # except TcpTimeoutException:
+            #    raise TcpTimeoutException(
+            #        f"TCP timeout while finding element {pymordial_element.label}"
+            #    )
+            except Exception as e:
+                logger.error(f"Error capturing screen: {e}")
+
         try:
             if pymordial_pixel.position is None:
                 logger.warning(
@@ -118,6 +136,33 @@ class ImageController:
                 int(pymordial_pixel.position[0]),
                 int(pymordial_pixel.position[1]),
             )
+
+            # Scale coordinates if og_resolution is defined
+            if pymordial_pixel.og_resolution is not None:
+                # Get the actual screenshot dimensions
+                if isinstance(pymordial_screenshot, bytes):
+                    with Image.open(BytesIO(pymordial_screenshot)) as img:
+                        actual_width, actual_height = img.size
+                elif isinstance(pymordial_screenshot, np.ndarray):
+                    actual_height, actual_width = pymordial_screenshot.shape[:2]
+                else:
+                    actual_width, actual_height = pymordial_pixel.og_resolution
+
+                og_width, og_height = pymordial_pixel.og_resolution
+                scale_x = actual_width / og_width
+                scale_y = actual_height / og_height
+                original_coords = target_coords
+                target_coords = (
+                    int(target_coords[0] * scale_x),
+                    int(target_coords[1] * scale_y),
+                )
+                logger.debug(
+                    f"Resolution scaling for '{pymordial_pixel.label}': "
+                    f"og={og_width}x{og_height}, actual={actual_width}x{actual_height}, "
+                    f"scale=({scale_x:.2f}, {scale_y:.2f}), "
+                    f"coords {original_coords} -> {target_coords}"
+                )
+
             if len(target_coords) != 2:
                 raise ValueError(
                     f"Coords for {pymordial_pixel.label} must be a tuple of two values, not {target_coords}"
@@ -131,30 +176,42 @@ class ImageController:
                     f"Tolerance for {pymordial_pixel.label} must be a non-negative integer, not {pymordial_pixel.tolerance}"
                 )
 
-            if screenshot_img_bytes is None:
+            if pymordial_screenshot is None:
                 raise ValueError(
                     f"Failed to capture screenshot for {pymordial_pixel.label}"
                 )
 
-            if isinstance(screenshot_img_bytes, bytes):
-                with Image.open(BytesIO(screenshot_img_bytes)) as image:
+            if isinstance(pymordial_screenshot, bytes):
+                with Image.open(BytesIO(pymordial_screenshot)) as image:
                     pixel_color = image.getpixel(target_coords)
-                    return check_color_with_tolerance(
+                    is_match = check_color_with_tolerance(
                         pixel_color,
                         pymordial_pixel.pixel_color,
                         pymordial_pixel.tolerance,
                     )
-            elif isinstance(screenshot_img_bytes, np.ndarray):
-                image = Image.fromarray(screenshot_img_bytes)
+                    logger.debug(
+                        f"Pixel check '{pymordial_pixel.label}' at {target_coords}: "
+                        f"actual={pixel_color}, expected={pymordial_pixel.pixel_color}, "
+                        f"tolerance={pymordial_pixel.tolerance}, match={is_match}"
+                    )
+                    return is_match
+            elif isinstance(pymordial_screenshot, np.ndarray):
+                image = Image.fromarray(pymordial_screenshot)
                 pixel_color = image.getpixel(target_coords)
-                return check_color_with_tolerance(
+                is_match = check_color_with_tolerance(
                     pixel_color,
                     pymordial_pixel.pixel_color,
                     pymordial_pixel.tolerance,
                 )
+                logger.debug(
+                    f"Pixel check '{pymordial_pixel.label}' at {target_coords}: "
+                    f"actual={pixel_color}, expected={pymordial_pixel.pixel_color}, "
+                    f"tolerance={pymordial_pixel.tolerance}, match={is_match}"
+                )
+                return is_match
             else:
                 raise ValueError(
-                    f"Image must be a bytes or numpy array, not {type(screenshot_img_bytes)}"
+                    f"Image must be a bytes or numpy array, not {type(pymordial_screenshot)}"
                 )
 
         except ValueError as e:
@@ -167,7 +224,7 @@ class ImageController:
     def where_element(
         self,
         pymordial_element: PymordialElement,
-        screenshot_img_bytes: "bytes | np.ndarray | None" = None,
+        pymordial_screenshot: "bytes | np.ndarray | None" = None,
         max_tries: int = DEFAULT_FIND_UI_RETRIES,
         set_position: bool = False,
         set_size: bool = False,
@@ -176,7 +233,7 @@ class ImageController:
 
         Args:
             pymordial_element: The PymordialElement to find.
-            screenshot_img_bytes: Optional pre-captured screenshot (bytes or numpy array).
+            pymordial_screenshot: Optional pre-captured screenshot (bytes or numpy array).
             max_tries: Maximum number of retries. If None, will retry indefinitely.
                 This is useful for waiting out loading screens with unknown/dynamic duration.
             set_position: If True, updates the element's position with found coordinates.
@@ -195,11 +252,11 @@ class ImageController:
         )
 
         find_ui_retries: int = 0
-        current_img = screenshot_img_bytes
+        pymordial_screenshot = pymordial_screenshot
 
         while (find_ui_retries < max_tries) if max_tries is not None else True:
             # Capture screen if we don't have an image to check
-            if current_img is None:
+            if pymordial_screenshot is None:
                 # Ensures PymordialController's ADB is connected
                 if not self.pymordial_controller.adb.is_connected():
                     self.pymordial_controller.adb.connect()
@@ -207,8 +264,8 @@ class ImageController:
                         raise ValueError("PymordialController's ADB is not connected")
 
                 try:
-                    current_img = self.pymordial_controller.capture_screen()
-                    if current_img is None:
+                    pymordial_screenshot = self.pymordial_controller.capture_screen()
+                    if pymordial_screenshot is None:
                         logger.warning("Failed to capture screen.")
                 except TcpTimeoutException:
                     raise TcpTimeoutException(
@@ -217,25 +274,25 @@ class ImageController:
                 except Exception as e:
                     logger.error(f"Error capturing screen: {e}")
 
-            if current_img is not None:
+            if pymordial_screenshot is not None:
                 if isinstance(pymordial_element, PymordialImage):
                     ui_location = None
                     try:
-                        if isinstance(current_img, bytes):
-                            haystack_img = Image.open(BytesIO(current_img))
-                        elif isinstance(current_img, np.ndarray):
-                            haystack_img = Image.fromarray(current_img)
+                        if isinstance(pymordial_screenshot, bytes):
+                            haystack_img = Image.open(BytesIO(pymordial_screenshot))
+                        elif isinstance(pymordial_screenshot, np.ndarray):
+                            haystack_img = Image.fromarray(pymordial_screenshot)
                         else:
                             # Should not happen if capture_screen returns correct types
                             # But if user passes something else...
                             logger.warning(
-                                f"Unsupported image type: {type(current_img)}. Attempting to open as file path if string."
+                                f"Unsupported image type: {type(pymordial_screenshot)}. Attempting to open as file path if string."
                             )
-                            if isinstance(current_img, str):
-                                haystack_img = Image.open(current_img)
+                            if isinstance(pymordial_screenshot, str):
+                                haystack_img = Image.open(pymordial_screenshot)
                             else:
                                 raise ValueError(
-                                    f"Unsupported image type: {type(current_img)}"
+                                    f"Unsupported image type: {type(pymordial_screenshot)}"
                                 )
 
                         # Scale the needle image to match current resolution
@@ -292,7 +349,7 @@ class ImageController:
 
             # Prepare for next retry
             find_ui_retries += 1
-            current_img = None  # Force capture on next iteration
+            pymordial_screenshot = None  # Force capture on next iteration
 
             if max_tries is not None and find_ui_retries >= max_tries:
                 break
@@ -310,14 +367,14 @@ class ImageController:
     def where_elements(
         self,
         pymordial_elements: list[PymordialElement],
-        screenshot_img_bytes: "bytes | np.ndarray | None" = None,
+        pymordial_screenshot: "bytes | np.ndarray | None" = None,
         max_tries: int = DEFAULT_FIND_UI_RETRIES,
     ) -> tuple[int, int] | None:
         """Finds the coordinates of the first found element from a list.
 
         Args:
             pymordial_elements: List of elements to search for.
-            screenshot_img_bytes: Optional pre-captured screenshot (bytes or numpy array).
+            pymordial_screenshot: Optional pre-captured screenshot (bytes or numpy array).
             max_tries: Maximum number of retries per element.
 
         Returns:
@@ -326,7 +383,7 @@ class ImageController:
         for pymordial_element in pymordial_elements:
             coord: tuple[int, int] | None = self.where_element(
                 pymordial_element=pymordial_element,
-                screenshot_img_bytes=screenshot_img_bytes,
+                pymordial_screenshot=pymordial_screenshot,
                 max_tries=max_tries,
             )
             if coord is not None:

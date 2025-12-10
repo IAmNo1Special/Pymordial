@@ -57,16 +57,23 @@ class PymordialController:
         """
         self.adb = AdbController(host=adb_host, port=adb_port)
         self.image = ImageController(self)
-        self.text = TextController()
-        self.bluestacks = BluestacksController(
-            adb_controller=self.adb, image_controller=self.image
-        )
+        self.text = TextController(pymordial_controller=self)
+        self.bluestacks = BluestacksController(self)
         self._apps: dict[str, "PymordialApp"] = {}
-        self.is_streaming = False
+        self._streaming_enabled = False  # Track if streaming should be active
 
         if apps:
             for app in apps:
                 self.add_app(app)
+
+    @property
+    def is_streaming(self) -> bool:
+        """Check if streaming is currently active.
+
+        Returns:
+            True if streaming is active, False otherwise.
+        """
+        return self.adb._is_streaming.is_set()
 
     def __getattr__(self, name: str) -> "PymordialApp":
         """Enables dot-notation access to registered apps.
@@ -129,9 +136,7 @@ class PymordialController:
 
     ## --- Click Methods ---
     def click_coord(
-        self,
-        coords: tuple[int, int],
-        times: int = CLICK_COORD_TIMES,
+        self, coords: tuple[int, int], times: int = CLICK_COORD_TIMES
     ) -> bool:
         """Clicks specific coordinates on the screen.
 
@@ -198,7 +203,7 @@ class PymordialController:
                         return False
                 coord: tuple[int, int] | None = self.find_element(
                     pymordial_element=pymordial_element,
-                    screenshot_img_bytes=screenshot_img_bytes,
+                    pymordial_screenshot=screenshot_img_bytes,
                     max_tries=max_tries,
                 )
                 if not coord:
@@ -247,14 +252,14 @@ class PymordialController:
 
         Convenience method that delegates to adb.go_home().
         """
-        return self.adb.go_home()
+        self.adb.go_home()
 
     def go_back(self) -> None:
         """Press Android back button.
 
         Convenience method that delegates to adb.go_back().
         """
-        return self.adb.go_back()
+        self.adb.go_back()
 
     def tap(self, x: int, y: int) -> None:
         """Tap at specific coordinates.
@@ -298,23 +303,38 @@ class PymordialController:
                 )
                 return None
 
-        if self.is_streaming:
-            frame = self.adb.get_latest_frame()
-            if frame is not None:
-                return frame
-            # If streaming is active but no frame is available yet,
-            # we might want to fallback to ADB screencap or just return None/wait.
-            # For now, let's fallback to ADB screencap to ensure we get *something*.
-            logger.debug(
-                "Streaming active but no frame available. Falling back to ADB screencap."
-            )
+        # Always use streaming - start if not active
+        if not self.is_streaming:
+            logger.info("Starting stream for capture_screen...")
+            if not self.start_streaming():
+                logger.error("Failed to start stream")
+                return None
 
-        return self.adb.capture_screenshot()
+        frame = self.adb.get_latest_frame()
+        if frame is not None:
+            # Validate frame isn't corrupted (all same color)
+            if frame.std() < 1.0:  # Nearly uniform = likely corrupted
+                logger.warning(
+                    "Frame appears corrupted (uniform color), restarting stream..."
+                )
+                self.adb.stop_stream()
+                if self.start_streaming():
+                    frame = self.adb.get_latest_frame()
+                    if frame is not None and frame.std() >= 1.0:
+                        logger.debug("Returning fresh frame after restart.")
+                        return frame
+                logger.error("Failed to get valid frame after restart")
+                return None
+            logger.debug("Returning latest frame from stream.")
+            return frame
+
+        logger.warning("Stream active but no frame available.")
+        return None
 
     def find_element(
         self,
         pymordial_element: PymordialElement,
-        screenshot_img_bytes: bytes | None = None,
+        pymordial_screenshot: bytes | None = None,
         max_tries: int = DEFAULT_MAX_TRIES,
     ) -> tuple[int, int] | None:
         """Finds the coordinates of a UI element on the screen.
@@ -330,20 +350,25 @@ class PymordialController:
         if isinstance(pymordial_element, PymordialImage):
             return self.image.where_element(
                 pymordial_element=pymordial_element,
-                screenshot_img_bytes=screenshot_img_bytes,
+                pymordial_screenshot=pymordial_screenshot,
                 max_tries=max_tries,
             )
         elif isinstance(pymordial_element, PymordialText):
             return self.text.find_text(
                 text_to_find=pymordial_element.element_text,
-                image_path=screenshot_img_bytes or self.capture_screen(),
+                pymordial_screenshot=pymordial_screenshot,
                 strategy=pymordial_element.extract_strategy,
             )
         elif isinstance(pymordial_element, PymordialPixel):
-
+            # Capture screenshot if not provided (avoid 'or' with numpy arrays)
+            pixel_screenshot = (
+                pymordial_screenshot
+                if pymordial_screenshot is not None
+                else self.capture_screen()
+            )
             is_match = self.image.check_pixel_color(
                 pymordial_pixel=pymordial_element,
-                screenshot_img_bytes=screenshot_img_bytes or self.capture_screen(),
+                pymordial_screenshot=pixel_screenshot,
             )
             return pymordial_element.position if is_match else None
 
@@ -354,14 +379,14 @@ class PymordialController:
     def is_element_visible(
         self,
         pymordial_element: PymordialElement,
-        screenshot_img_bytes: bytes | None = None,
+        pymordial_screenshot: bytes | None = None,
         max_tries: int | None = None,
     ) -> bool:
         """Checks if a UI element is visible on the screen.
 
         Args:
             pymordial_element: The element to check for.
-            screenshot_img_bytes: Optional pre-captured screenshot.
+            pymordial_screenshot: Optional pre-captured screenshot.
             max_tries: Optional maximum number of retries.
 
         Returns:
@@ -376,7 +401,7 @@ class PymordialController:
             return (
                 self.find_element(
                     pymordial_element=pymordial_element,
-                    screenshot_img_bytes=screenshot_img_bytes,
+                    pymordial_screenshot=pymordial_screenshot,
                     max_tries=max_tries or PymordialController.DEFAULT_MAX_TRIES,
                 )
                 is not None
@@ -386,28 +411,28 @@ class PymordialController:
             # Note: This doesn't return coordinates yet, so click_element won't work for Text
             # unless find_element is implemented for Text.
 
-            image_to_check = screenshot_img_bytes or self.capture_screen()
-
             # If the element has a defined region, crop the image to that region
-            if pymordial_element.region and image_to_check is not None:
+            if pymordial_element.region and pymordial_screenshot is not None:
                 try:
-                    if isinstance(image_to_check, bytes):
-                        pil_img = Image.open(BytesIO(image_to_check))
-                    elif isinstance(image_to_check, np.ndarray):
-                        pil_img = Image.fromarray(image_to_check)
+                    if isinstance(pymordial_screenshot, bytes):
+                        pymordial_screenshot = Image.open(BytesIO(pymordial_screenshot))
+                    elif isinstance(pymordial_screenshot, np.ndarray):
+                        pymordial_screenshot = Image.fromarray(pymordial_screenshot)
                     else:
-                        pil_img = None
+                        pymordial_screenshot = None
 
-                    if pil_img:
+                    if pymordial_screenshot is not None:
                         # region is (left, top, right, bottom)
-                        pil_img = pil_img.crop(pymordial_element.region)
-                        image_to_check = np.array(pil_img)
+                        pymordial_screenshot = pymordial_screenshot.crop(
+                            pymordial_element.region
+                        )
+                        pymordial_screenshot = np.array(pymordial_screenshot)
                 except Exception as e:
                     logger.warning(f"Failed to crop image for text detection: {e}")
 
             return self.text.check_text(
                 text_to_find=pymordial_element.element_text,
-                image_path=image_to_check,
+                pymordial_screenshot=pymordial_screenshot,
                 strategy=pymordial_element.extract_strategy,
                 case_sensitive=False,
             )
@@ -415,7 +440,7 @@ class PymordialController:
             return (
                 self.find_element(
                     pymordial_element=pymordial_element,
-                    screenshot_img_bytes=screenshot_img_bytes,
+                    pymordial_screenshot=pymordial_screenshot,
                     max_tries=max_tries or PymordialController.DEFAULT_MAX_TRIES,
                 )
                 is not None
@@ -568,9 +593,10 @@ class PymordialController:
             ...     # Process frame for real-time bot logic
             ...     text = controller.read_text(frame)
         """
-        self.is_streaming = self.adb.start_stream(width, height, bitrate)
-
-        return self.is_streaming
+        result = self.adb.start_stream(width, height, bitrate)
+        if result:
+            self._streaming_enabled = True
+        return result
 
     def get_frame(self) -> "np.ndarray | None":
         """Get the latest frame from the active stream.
@@ -589,10 +615,11 @@ class PymordialController:
         return self.adb.get_latest_frame()
 
     def stop_streaming(self) -> None:
-        """Stop the active video stream.
+        """Stop the active video stream and disable auto-restart.
 
         Convenience method that delegates to adb.stop_stream().
         """
+        self._streaming_enabled = False
         return self.adb.stop_stream()
 
     def __repr__(self) -> str:

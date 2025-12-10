@@ -7,7 +7,7 @@ adb:
   process_wait_timeout: 10
   app_start_timeout: 60
   stream:
-    resolution: 1024
+    resolution: 1920
     bitrate: "5M"
     time_limit: 180
     queue_size: 100

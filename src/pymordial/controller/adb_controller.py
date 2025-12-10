@@ -79,6 +79,7 @@ class AdbController:
             port: ADB server port. Defaults to config value.
             timeout: ADB command timeout. Defaults to config value.
         """
+        self.logger.debug("Initializing ADB controller...")
         self.host = host or DEFAULT_IP
         self.port = port or DEFAULT_PORT
         self.timeout = timeout or DEFAULT_TIMEOUT
@@ -275,7 +276,7 @@ class AdbController:
         self._stream_thread.start()
 
         # Wait for first frame
-        for _ in range(STREAM_START_TIMEOUT_ITERATIONS):  # 5 second timeout
+        for _ in range(STREAM_START_TIMEOUT_ITERATIONS):
             if self._latest_frame is not None:
                 self.logger.info("Stream started successfully")
                 return True
@@ -386,9 +387,7 @@ class AdbController:
         # Wait for app to open by checking if it's running
         start_time: float = time.time()
         while time.time() - start_time < timeout:
-            self.shell_command(
-                f"monkey -p {app.package_name} -v {MONKEY_VERBOSITY}"
-            )
+            self.shell_command(f"monkey -p {app.package_name} -v {MONKEY_VERBOSITY}")
             match self.is_app_running(app, max_retries=5, wait_time=wait_time):
                 case True:
                     self.logger.debug(
@@ -423,6 +422,9 @@ class AdbController:
         Returns:
             True if the app process is found, False otherwise.
 
+        Raises:
+            ConnectionError: If ADB connection cannot be established.
+
         Examples:
             # Quick check if app is closed (no retries needed)
             is_running = adb.is_app_running(app)
@@ -430,11 +432,15 @@ class AdbController:
             # Wait for app to start (with retries)
             is_running = adb.is_app_running(app, max_retries=20, wait_time=1)
         """
+        # Ensure we're connected, reconnect if needed
         if not self.is_connected():
-            self.logger.warning(
-                "ADB device not connected. Skipping 'is_app_running' method call."
-            )
-            return False
+            self.logger.info("ADB not connected. Attempting to reconnect...")
+            self.connect()
+            if not self.is_connected():
+                raise ConnectionError(
+                    "ADB device not connected and reconnection failed. "
+                    "Cannot check if app is running."
+                )
 
         for attempt in range(max_retries):
             try:
@@ -473,14 +479,28 @@ class AdbController:
                             f"{app.app_name} process not found after {max_retries} attempts"
                         )
             except Exception as e:
-                # grep returns exit code 1 when no match found - this is expected
-                if attempt < max_retries - 1:
-                    self.logger.debug(
-                        f"App process check attempt {attempt + 1} failed: {e}"
-                    )
-                    time.sleep(wait_time)
+                # Check if this is a connection/timeout error vs a grep "not found" error
+                error_str = str(e).lower()
+                if "timed out" in error_str or "connection" in error_str:
+                    # Connection error - try to reconnect
+                    self.logger.warning(f"Connection error during app check: {e}")
+                    if attempt < max_retries - 1:
+                        self.logger.info("Attempting to reconnect...")
+                        self.connect()
+                        time.sleep(wait_time)
+                    else:
+                        raise ConnectionError(
+                            f"ADB connection error after {max_retries} attempts: {e}"
+                        )
                 else:
-                    self.logger.debug(f"App process not found or error: {e}")
+                    # grep returns exit code 1 when no match found - this is expected
+                    if attempt < max_retries - 1:
+                        self.logger.debug(
+                            f"App process check attempt {attempt + 1} failed: {e}"
+                        )
+                        time.sleep(wait_time)
+                    else:
+                        self.logger.debug(f"App process not found or error: {e}")
 
         return False
 
@@ -506,6 +526,14 @@ class AdbController:
                 "ADB device not initialized. Skipping 'close_app' method call."
             )
             return False
+
+        # Ensure connection is fresh before force-stop (prevents stale connection failures)
+        if not self.is_connected():
+            self.logger.info("Reconnecting ADB before app close...")
+            self.connect()
+            if not self.is_connected():
+                self.logger.error("Failed to reconnect ADB. Cannot close app.")
+                return False
 
         # Force stop the app
         self.shell_command(

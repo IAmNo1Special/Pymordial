@@ -4,6 +4,7 @@ import logging
 import os
 import time
 from importlib.resources import files
+from typing import TYPE_CHECKING
 
 import psutil
 
@@ -15,6 +16,9 @@ from pymordial.core.pymordial_element import PymordialElement
 from pymordial.state_machine import BluestacksState, StateMachine
 from pymordial.utils import validate_and_convert_int
 from pymordial.utils.config import get_config
+
+if TYPE_CHECKING:
+    from pymordial.controller.pymordial_controller import PymordialController
 
 _CONFIG = get_config()
 
@@ -152,14 +156,11 @@ class BluestacksController:
         elements: Container for BlueStacks UI elements.
     """
 
-    def __init__(
-        self, adb_controller: AdbController, image_controller: ImageController
-    ) -> None:
+    def __init__(self, pymordial_controller: "PymordialController") -> None:
         """Initializes the BluestacksController.
 
         Args:
-            adb_controller: The AdbController instance.
-            image_controller: The ImageController instance.
+            pymordial_controller: The PymordialController instance.
         """
         logger.info("Initializing BluestacksController")
 
@@ -175,8 +176,9 @@ class BluestacksController:
         self.elements: BluestacksElements = BluestacksElements(self)
         self._autoset_filepath()
 
-        self._adb_controller: AdbController = adb_controller
-        self._image_controller: ImageController = image_controller
+        self._pymordial_controller = pymordial_controller
+        self._adb_controller: AdbController = pymordial_controller.adb
+        self._image_controller: ImageController = pymordial_controller.image
 
         self.bluestacks_state.register_handler(
             BluestacksState.LOADING, self.wait_for_load, None
