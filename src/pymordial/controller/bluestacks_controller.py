@@ -437,7 +437,7 @@ class BluestacksController:
             # Try to connect to ADB
             if self._adb_controller.connect():
                 logger.debug("ADB connected! Waiting 5 seconds for UI to stabilize...")
-                time.sleep(5)
+                time.sleep(10)
                 logger.info("Bluestacks is loaded & ready.")
                 self.bluestacks_state.transition_to(EmulatorState.READY)
                 return
