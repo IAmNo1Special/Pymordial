@@ -26,7 +26,7 @@ class BluestacksState(Enum):
         }
 
 
-class AppLifecycleState(Enum):
+class AppState(Enum):
     """Enumeration of application lifecycle states."""
 
     CLOSED = auto()
@@ -35,7 +35,7 @@ class AppLifecycleState(Enum):
 
     @classmethod
     def get_transitions(cls) -> dict[Enum, list[Enum]]:
-        """Define valid state transitions for the App state machine.
+        """Define valid state transitions for the app state machine.
 
         Returns:
             A dictionary mapping current states to their allowed next states.
