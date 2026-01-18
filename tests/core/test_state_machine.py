@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from pymordial.state_machine import AppState, BluestacksState, StateMachine
+from pymordial.state_machine import AppState, EmulatorState, StateMachine
 
 
 class StateForTesting(Enum):
@@ -16,12 +16,12 @@ class StateForTesting(Enum):
 
 def test_bluestacks_state_transitions():
     """Test BlueStacks state transitions definition."""
-    transitions = BluestacksState.get_transitions()
+    transitions = EmulatorState.get_transitions()
 
-    assert BluestacksState.CLOSED in transitions
-    assert BluestacksState.LOADING in transitions[BluestacksState.CLOSED]
-    assert BluestacksState.READY in transitions[BluestacksState.LOADING]
-    assert BluestacksState.CLOSED in transitions[BluestacksState.READY]
+    assert EmulatorState.CLOSED in transitions
+    assert EmulatorState.LOADING in transitions[EmulatorState.CLOSED]
+    assert EmulatorState.READY in transitions[EmulatorState.LOADING]
+    assert EmulatorState.CLOSED in transitions[EmulatorState.READY]
 
 
 def test_app_lifecycle_state_transitions():

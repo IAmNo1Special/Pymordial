@@ -13,7 +13,7 @@ from pymordial.controller.image_controller import ImageController
 from pymordial.core.elements.pymordial_image import PymordialImage
 from pymordial.core.pymordial_app import PymordialApp
 from pymordial.core.pymordial_element import PymordialElement
-from pymordial.state_machine import BluestacksState, StateMachine
+from pymordial.state_machine import EmulatorState, StateMachine
 from pymordial.utils import validate_and_convert_int
 from pymordial.utils.config import get_config
 
@@ -169,8 +169,8 @@ class BluestacksController:
         self._default_transport_timeout_s: int = DEFAULT_TRANSPORT_TIMEOUT_S
         self.running_apps: list[PymordialApp] | list = list()
         self.bluestacks_state = StateMachine(
-            current_state=BluestacksState.CLOSED,
-            transitions=BluestacksState.get_transitions(),
+            current_state=EmulatorState.CLOSED,
+            transitions=EmulatorState.get_transitions(),
         )
 
         self.elements: BluestacksElements = BluestacksElements(self)
@@ -181,10 +181,10 @@ class BluestacksController:
         self._image_controller: ImageController = pymordial_controller.image
 
         self.bluestacks_state.register_handler(
-            BluestacksState.LOADING, self.wait_for_load, None
+            EmulatorState.LOADING, self.wait_for_load, None
         )
         self.bluestacks_state.register_handler(
-            BluestacksState.READY, self._adb_controller.connect, None
+            EmulatorState.READY, self._adb_controller.connect, None
         )
 
         logger.debug(
@@ -372,7 +372,7 @@ class BluestacksController:
         wait_time: int = validate_and_convert_int(wait_time, "wait_time")
         timeout_s: int = validate_and_convert_int(timeout_s, "timeout_s")
         match self.bluestacks_state.current_state:
-            case BluestacksState.CLOSED:
+            case EmulatorState.CLOSED:
                 logger.info("Opening Bluestacks controller...")
                 if not self._filepath:
                     self._autoset_filepath()
@@ -392,7 +392,7 @@ class BluestacksController:
                     if is_open:
                         logger.info("Bluestacks controller opened successfully.")
                         # Transition to LOADING - state handler will automatically call wait_for_load()
-                        self.bluestacks_state.transition_to(BluestacksState.LOADING)
+                        self.bluestacks_state.transition_to(EmulatorState.LOADING)
                         return
 
                     if time.time() - start_time > timeout_s:
@@ -412,12 +412,12 @@ class BluestacksController:
                 raise Exception(
                     f"Failed to find Bluestacks window after all attempts {attempt + 1}/{max_retries}"
                 )
-            case BluestacksState.LOADING:
+            case EmulatorState.LOADING:
                 logger.info(
                     "Bluestacks controller is already open and currently loading."
                 )
                 return
-            case BluestacksState.READY:
+            case EmulatorState.READY:
                 logger.info("Bluestacks controller is already open and ready.")
                 return
 
@@ -433,13 +433,13 @@ class BluestacksController:
         logger.debug("Waiting for Bluestacks to load (ADB check)...")
         start_time = time.time()
 
-        while self.bluestacks_state.current_state == BluestacksState.LOADING:
+        while self.bluestacks_state.current_state == EmulatorState.LOADING:
             # Try to connect to ADB
             if self._adb_controller.connect():
                 logger.debug("ADB connected! Waiting 5 seconds for UI to stabilize...")
                 time.sleep(5)
                 logger.info("Bluestacks is loaded & ready.")
-                self.bluestacks_state.transition_to(BluestacksState.READY)
+                self.bluestacks_state.transition_to(EmulatorState.READY)
                 return
 
             # Check timeout
@@ -449,7 +449,7 @@ class BluestacksController:
                 )
                 # We transition to READY anyway to allow retry logic elsewhere if needed,
                 # or maybe we should raise? For now, mimicking previous behavior.
-                self.bluestacks_state.transition_to(BluestacksState.READY)
+                self.bluestacks_state.transition_to(EmulatorState.READY)
                 return
 
             time.sleep(DEFAULT_WAIT_TIME)
@@ -489,8 +489,8 @@ class BluestacksController:
                 ):
                     pass
 
-            if self.bluestacks_state.current_state != BluestacksState.CLOSED:
-                self.bluestacks_state.transition_to(BluestacksState.CLOSED)
+            if self.bluestacks_state.current_state != EmulatorState.CLOSED:
+                self.bluestacks_state.transition_to(EmulatorState.CLOSED)
 
             if not process_found:
                 logger.debug("Bluestacks process was not found.")
@@ -503,7 +503,7 @@ class BluestacksController:
 
     def is_ready(self) -> bool:
         """Check if BlueStacks is in READY state."""
-        return self.bluestacks_state.current_state == BluestacksState.READY
+        return self.bluestacks_state.current_state == EmulatorState.READY
 
     def __repr__(self) -> str:
         """Returns a string representation of the BluestacksController."""

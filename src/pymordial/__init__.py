@@ -24,7 +24,7 @@ from pymordial.exceptions import (
     PymordialStateError,
     PymordialTimeoutError,
 )
-from pymordial.state_machine import AppState, BluestacksState, StateMachine
+from pymordial.state_machine import AppState, EmulatorState, StateMachine
 
 __all__ = [
     "AdbController",
@@ -44,7 +44,7 @@ __all__ = [
     "PymordialTimeoutError",
     "BluestacksController",
     "BluestacksElements",
-    "BluestacksState",
+    "EmulatorState",
     "ImageController",
     "TextController",
     "StateMachine",

@@ -17,7 +17,7 @@ from pymordial.core.elements.pymordial_pixel import PymordialPixel
 from pymordial.core.elements.pymordial_text import PymordialText
 from pymordial.core.pymordial_element import PymordialElement
 from pymordial.ocr.extract_strategy import PymordialExtractStrategy
-from pymordial.state_machine import BluestacksState
+from pymordial.state_machine import EmulatorState
 from pymordial.utils.config import get_config
 
 if TYPE_CHECKING:
@@ -149,10 +149,10 @@ class PymordialController:
         """
         # Ensure Bluestacks is ready before trying to click coords
         match self.bluestacks.bluestacks_state.current_state:
-            case BluestacksState.CLOSED | BluestacksState.LOADING:
+            case EmulatorState.CLOSED | EmulatorState.LOADING:
                 logger.warning("Cannot click coords - Bluestacks is not ready")
                 return False
-            case BluestacksState.READY:
+            case EmulatorState.READY:
                 is_connected = self.adb.is_connected()
                 if not is_connected:
                     logger.warning(
@@ -190,10 +190,10 @@ class PymordialController:
         """
         # Ensure Bluestacks is ready before trying to click ui
         match self.bluestacks.bluestacks_state.current_state:
-            case BluestacksState.CLOSED | BluestacksState.LOADING:
+            case EmulatorState.CLOSED | EmulatorState.LOADING:
                 logger.warning("Cannot click coords - Bluestacks is not ready")
                 return False
-            case BluestacksState.READY:
+            case EmulatorState.READY:
                 if not self.adb.is_connected():
                     self.adb.connect()
                     if not self.adb.is_connected():
@@ -218,7 +218,7 @@ class PymordialController:
             case _:
                 logger.warning(
                     "Cannot click coords - PymordialController.bluestacks_state.current_state is not in a valid state."
-                    " Make sure it is in the 'BluestacksState.READY' state."
+                    " Make sure it is in the 'EmulatorState.READY' state."
                 )
                 return False
 
