@@ -48,7 +48,7 @@ def main():
     logger.info(f"   App state: {settings_app.app_state.current_state.name}")
 
     # Wait for app to load
-    time.sleep(2)
+    time.sleep(10)
 
     # Check if app is running
     logger.info("\n5. Checking if app is running...")
