@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 
 
-class BluestacksState(Enum):
-    """Enumeration of BlueStacks emulator states."""
+class EmulatorState(Enum):
+    """Enumeration of emulator states."""
 
     CLOSED = auto()
     LOADING = auto()
@@ -14,7 +14,7 @@ class BluestacksState(Enum):
 
     @classmethod
     def get_transitions(cls) -> dict[Enum, list[Enum]]:
-        """Define valid state transitions for the BlueStacks state machine.
+        """Define valid state transitions for the emulator state machine.
 
         Returns:
             A dictionary mapping current states to their allowed next states.
