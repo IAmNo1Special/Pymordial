@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pymordial.state_machine import AppLifecycleState, StateMachine
+from pymordial.state_machine import AppState, StateMachine
 from pymordial.utils.config import get_config
 
 if TYPE_CHECKING:
@@ -74,8 +74,8 @@ class PymordialApp:
         self.ready_element: "PymordialElement | None" = ready_element
 
         self.app_state = StateMachine(
-            current_state=AppLifecycleState.CLOSED,
-            transitions=AppLifecycleState.get_transitions(),
+            current_state=AppState.CLOSED,
+            transitions=AppState.get_transitions(),
         )
 
     def add_screen(self, screen: PymordialScreen) -> None:
@@ -98,7 +98,7 @@ class PymordialApp:
             app.open()
             # Wait and detect your app's loading indicator...
             if controller.is_element_visible(start_button):
-                app.app_state.transition_to(AppLifecycleState.READY)
+                app.app_state.transition_to(AppState.READY)
 
             # With ready_element (automatic):
             app = PymordialApp(
@@ -121,7 +121,7 @@ class PymordialApp:
             self, timeout=APP_ACTION_TIMEOUT, wait_time=APP_ACTION_WAIT_TIME
         )
         if result:
-            self.app_state.transition_to(AppLifecycleState.LOADING)
+            self.app_state.transition_to(AppState.LOADING)
             # Auto-check if ready_element is visible
             if self.ready_element:
                 self.check_ready()
@@ -150,7 +150,7 @@ class PymordialApp:
         if not self.ready_element or not self.pymordial_controller:
             return False
 
-        if self.app_state.current_state != AppLifecycleState.LOADING:
+        if self.app_state.current_state != AppState.LOADING:
             return False  # Only transition from LOADING
 
         # Check if ready element is visible
@@ -158,7 +158,7 @@ class PymordialApp:
             if self.pymordial_controller.is_element_visible(
                 self.ready_element, max_tries=max_tries
             ):
-                self.app_state.transition_to(AppLifecycleState.READY)
+                self.app_state.transition_to(AppState.READY)
                 return True
         except Exception:
             pass  # Element not visible yet
@@ -182,7 +182,7 @@ class PymordialApp:
             self, timeout=APP_ACTION_TIMEOUT, wait_time=APP_CLOSE_WAIT_TIME
         )
         if result:
-            self.app_state.transition_to(AppLifecycleState.CLOSED)
+            self.app_state.transition_to(AppState.CLOSED)
         return result
 
     def is_open(self) -> bool:
@@ -191,19 +191,19 @@ class PymordialApp:
         Returns:
             True if the app is READY, False otherwise.
         """
-        return self.app_state.current_state == AppLifecycleState.READY
+        return self.app_state.current_state == AppState.READY
 
     def is_loading(self) -> bool:
         """Checks if the app is in the LOADING state.
 
         Apps remain in LOADING until:
         1. A ready_element becomes visible (automatic transition), or
-        2. You manually transition: app.app_state.transition_to(AppLifecycleState.READY)
+        2. You manually transition: app.app_state.transition_to(AppState.READY)
 
         Returns:
             True if the app is LOADING, False otherwise.
         """
-        return self.app_state.current_state == AppLifecycleState.LOADING
+        return self.app_state.current_state == AppState.LOADING
 
     def is_closed(self) -> bool:
         """Checks if the app is in the CLOSED state.
@@ -211,7 +211,7 @@ class PymordialApp:
         Returns:
             True if the app is CLOSED, False otherwise.
         """
-        return self.app_state.current_state == AppLifecycleState.CLOSED
+        return self.app_state.current_state == AppState.CLOSED
 
     def __repr__(self) -> str:
         """Returns a string representation of the app."""

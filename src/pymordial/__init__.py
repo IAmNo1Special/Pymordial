@@ -24,11 +24,11 @@ from pymordial.exceptions import (
     PymordialStateError,
     PymordialTimeoutError,
 )
-from pymordial.state_machine import AppLifecycleState, BluestacksState, StateMachine
+from pymordial.state_machine import AppState, BluestacksState, StateMachine
 
 __all__ = [
     "AdbController",
-    "AppLifecycleState",
+    "AppState",
     "PymordialApp",
     "PymordialAppError",
     "PymordialConnectionError",

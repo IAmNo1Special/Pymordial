@@ -77,7 +77,7 @@ This is expected behavior! Apps remain in `LOADING` until:
    app.open()
    # Your loading detection logic...
    if controller.is_element_visible(start_button):
-       app.app_state.transition_to(AppLifecycleState.READY)
+       app.app_state.transition_to(AppState.READY)
    ```
 
 ### "Element not found"

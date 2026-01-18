@@ -7,7 +7,7 @@ import pytest
 from pymordial.core.elements.pymordial_image import PymordialImage
 from pymordial.core.elements.pymordial_text import PymordialText
 from pymordial.core.pymordial_app import PymordialApp
-from pymordial.state_machine import AppLifecycleState
+from pymordial.state_machine import AppState
 
 
 def test_pymordial_app_init_success(mock_config):
@@ -17,7 +17,7 @@ def test_pymordial_app_init_success(mock_config):
     assert app.package_name == "com.test.app"
     assert app.pymordial_controller is None
     assert app.screens == {}
-    assert app.app_state.current_state == AppLifecycleState.CLOSED
+    assert app.app_state.current_state == AppState.CLOSED
     assert app.ready_element is None
 
 
@@ -86,7 +86,7 @@ def test_open_with_controller(mock_config, mock_adb_controller):
         app.open()
         mock_open.assert_called()
 
-    assert app.app_state.current_state == AppLifecycleState.LOADING
+    assert app.app_state.current_state == AppState.LOADING
 
 
 def test_close_without_controller(mock_config):
@@ -106,22 +106,22 @@ def test_close_with_controller(mock_config, mock_adb_controller):
     controller.adb = mock_adb_controller
     app.pymordial_controller = controller
 
-    app.app_state.transition_to(AppLifecycleState.LOADING, ignore_validation=True)
+    app.app_state.transition_to(AppState.LOADING, ignore_validation=True)
 
     with patch.object(controller.adb, "close_app") as mock_close:
         app.close()
         mock_close.assert_called()
 
-    assert app.app_state.current_state == AppLifecycleState.CLOSED
+    assert app.app_state.current_state == AppState.CLOSED
 
 
 def test_is_open(mock_config):
     """Test is_open returns correct status."""
     app = PymordialApp(app_name="TestApp", package_name="com.test.app")
     assert not app.is_open()
-    app.app_state.transition_to(AppLifecycleState.LOADING)
+    app.app_state.transition_to(AppState.LOADING)
     assert not app.is_open()
-    app.app_state.transition_to(AppLifecycleState.READY)
+    app.app_state.transition_to(AppState.READY)
     assert app.is_open()
 
 
@@ -129,7 +129,7 @@ def test_is_loading(mock_config):
     """Test is_loading returns correct status."""
     app = PymordialApp(app_name="TestApp", package_name="com.test.app")
     assert not app.is_loading()
-    app.app_state.transition_to(AppLifecycleState.LOADING)
+    app.app_state.transition_to(AppState.LOADING)
     assert app.is_loading()
 
 
@@ -137,7 +137,7 @@ def test_is_closed(mock_config):
     """Test is_closed returns correct status."""
     app = PymordialApp(app_name="TestApp", package_name="com.test.app")
     assert app.is_closed()
-    app.app_state.transition_to(AppLifecycleState.LOADING)
+    app.app_state.transition_to(AppState.LOADING)
     assert not app.is_closed()
 
 
