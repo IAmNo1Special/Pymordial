@@ -13,7 +13,7 @@ from adb_shell.auth.sign_pythonrsa import PythonRSASigner
 
 from pymordial.core.pymordial_bridge import PymordialBridgeDevice
 from pymordial.utils.config import AdbConfig, get_config
-from pymordial.utils.streaming import PymordialStreamReader
+from pymordial.utils import PymordialStreamReader
 
 
 class PymordialAdbDevice(PymordialBridgeDevice):
