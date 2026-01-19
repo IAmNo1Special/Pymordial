@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from PIL import Image
 
-from pymordial.controller.adb_controller import AdbController
+from pymordial.controller.adb_device import PymordialAdbDevice
 from pymordial.controller.bluestacks_controller import BluestacksController
 from pymordial.controller.image_controller import ImageController
 from pymordial.controller.text_controller import TextController
@@ -32,7 +32,7 @@ class PymordialController:
     """Main controller that orchestrates ADB, BlueStacks, and Image controllers.
 
     Attributes:
-        adb: The AdbController instance.
+        adb: The PymordialAdbDevice instance.
         image: The ImageController instance.
         bluestacks: The BluestacksController instance.
     """
@@ -55,7 +55,7 @@ class PymordialController:
             adb_port: Optional ADB port.
             apps: Optional list of PymordialApp instances to register.
         """
-        self.adb = AdbController(host=adb_host, port=adb_port)
+        self.adb = PymordialAdbDevice(host=adb_host, port=adb_port)
         self.image = ImageController(self)
         self.text = TextController(pymordial_controller=self)
         self.bluestacks = BluestacksController(self)
@@ -164,7 +164,7 @@ class PymordialController:
                 )
                 tap_command = " && ".join([single_tap] * times)
 
-                self.adb.shell_command(tap_command)
+                self.adb.run_command(tap_command)
                 logger.debug(
                     f"Click event sent via ADB at coords x={coords[0]}, y={coords[1]}"
                 )
@@ -478,7 +478,7 @@ class PymordialController:
 
     # --- Shell & Utility Methods ---
 
-    def shell_command(self, command: str) -> bytes | None:
+    def run_command(self, command: str) -> bytes | None:
         """Execute ADB shell command.
 
         Args:
@@ -487,9 +487,9 @@ class PymordialController:
         Returns:
             Command output as bytes, or None if failed.
 
-        Convenience method that delegates to adb.shell_command().
+        Convenience method that delegates to adb.run_command().
         """
-        return self.adb.shell_command(command)
+        return self.adb.run_command(command)
 
     def get_current_app(self) -> str | None:
         """Get the currently running app's package name.
