@@ -42,7 +42,7 @@ else:
 
 # Verify ADB connection
 if controller.adb.is_connected():
-    result = controller.adb.shell_command("getprop ro.build.version.release")
+    result = controller.adb.run_command("getprop ro.build.version.release")
     print(f"Android: {result.decode().strip()}")
 ```
 
@@ -132,7 +132,7 @@ if controller.my_game.is_open():
 
 ```
 PymordialController
-├── adb        (AdbController)      - Shell commands, streaming, tap/swipe
+├── adb        (PymordialAdbDevice)      - Shell commands, streaming, tap/swipe
 ├── bluestacks (BluestacksController) - Open/close emulator, window management
 ├── image      (ImageController)    - Template matching, pixel detection
 └── text       (TextController)     - OCR via Tesseract
