@@ -40,7 +40,7 @@ controller = PymordialController(adb_host="192.168.1.100", adb_port=5037)
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `adb` | `AdbController` | ADB subsystem |
+| `adb` | `PymordialAdbDevice` | ADB subsystem |
 | `bluestacks` | `BluestacksController` | Emulator subsystem |
 | `image` | `ImageController` | Image recognition |
 | `text` | `TextController` | OCR |
@@ -140,7 +140,7 @@ text = PymordialText(
 
 ---
 
-## AdbController
+## PymordialAdbDevice
 
 Low-level ADB commands. Access via `controller.adb`.
 
@@ -177,7 +177,7 @@ Low-level ADB commands. Access via `controller.adb`.
 
 | Method | Description | Returns |
 |--------|-------------|---------|
-| `shell_command(cmd: str)` | Execute shell command | `bytes \| None` |
+| `run_command(cmd: str)` | Execute shell command | `bytes \| None` |
 
 ### Streaming
 

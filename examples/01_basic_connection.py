@@ -42,14 +42,14 @@ def main():
 
     # Get Android version via shell command
     logger.info("\n4. Getting Android version...")
-    result = controller.adb.shell_command("getprop ro.build.version.release")
+    result = controller.adb.run_command("getprop ro.build.version.release")
     if result:
         android_version = result.decode("utf-8").strip()
         logger.info(f"   Android Version: {android_version}")
 
     # Get device model
     logger.info("\n5. Getting device model...")
-    result = controller.adb.shell_command("getprop ro.product.model")
+    result = controller.adb.run_command("getprop ro.product.model")
     if result:
         device_model = result.decode("utf-8").strip()
         logger.info(f"   Device Model: {device_model}")
