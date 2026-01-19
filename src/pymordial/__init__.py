@@ -5,10 +5,10 @@ automating BlueStacks interactions.
 """
 
 from pymordial.controller import (
-    AdbController,
     BluestacksController,
     BluestacksElements,
     ImageController,
+    PymordialAdbDevice,
     PymordialController,
     TextController,
 )
@@ -27,7 +27,7 @@ from pymordial.exceptions import (
 from pymordial.state_machine import AppState, EmulatorState, StateMachine
 
 __all__ = [
-    "AdbController",
+    "PymordialAdbDevice",
     "AppState",
     "PymordialApp",
     "PymordialAppError",
