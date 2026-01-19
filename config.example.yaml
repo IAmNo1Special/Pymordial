@@ -8,11 +8,10 @@
 
 # --- ADB Settings ---
 adb:
-  default_ip: "127.0.0.1"
+  default_host: "127.0.0.1"
   default_port: 5555
   default_max_retries: 10
   default_wait_time: 1
-  default_timeout: 30
   process_wait_timeout: 10
   app_start_timeout: 60
   # --- Streaming Settings ---
