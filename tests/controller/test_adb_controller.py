@@ -1,59 +1,56 @@
-"""Tests for AdbController."""
+"""Tests for PymordialAdbDevice."""
 
 from unittest.mock import patch
 
-from pymordial.controller.adb_controller import AdbController
-from pymordial.core.pymordial_app import PymordialApp
+from pymordial.controller.adb_device import PymordialAdbDevice
 
 
 def test_adb_controller_init_default_params(mock_config):
-    """Test AdbController initialization with default parameters."""
-    with patch("pymordial.controller.adb_controller.DEFAULT_TIMEOUT", 10):
-        controller = AdbController()
+    """Test PymordialAdbDevice initialization with default parameters."""
+    controller = PymordialAdbDevice()
 
-        assert controller.host == "127.0.0.1"  # From config
-        assert controller.port == 5555  # From config
-        assert controller.timeout == 10  # From config
-        assert controller.device is None
-        assert controller._stream_thread is None
+    assert controller.host == "127.0.0.1"  # From config
+    assert controller.port == 5555  # From config
+    assert controller.config["commands"]["timeout"] == 10  # From config
+    assert controller._device is None
+    assert controller._stream_thread is None
 
 
 def test_adb_controller_init_custom_params(mock_config):
-    """Test AdbController initialization with custom parameters."""
-    controller = AdbController(host="192.168.1.100", port=5556, timeout=20)
+    """Test PymordialAdbDevice initialization with custom parameters."""
+    controller = PymordialAdbDevice(host="192.168.1.100", port=5556)
 
     assert controller.host == "192.168.1.100"
     assert controller.port == 5556
-    assert controller.timeout == 20
 
 
 def test_connect_success(mock_config, mock_adb_device):
     """Test successful ADB connection."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
 
     result = controller.connect()
 
     assert result is True
-    assert controller.device is not None
+    assert controller._device is not None
 
 
 def test_connect_failure(mock_config):
     """Test ADB connection failure."""
-    with patch("pymordial.controller.adb_controller.AdbDeviceTcp") as mock_device_class:
+    with patch("pymordial.controller.adb_device.AdbDeviceTcp") as mock_device_class:
         mock_instance = mock_device_class.return_value
         mock_instance.connect.side_effect = Exception("Connection failed")
         mock_instance.available = False
 
-        controller = AdbController()
+        controller = PymordialAdbDevice()
         result = controller.connect()
 
         assert result is False
-        assert controller.device is None
+        assert controller._device is None
 
 
 def test_disconnect_success(mock_config, mock_adb_device):
     """Test successful ADB disconnection."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
     # Ensure device is initially available
@@ -73,7 +70,7 @@ def test_disconnect_success(mock_config, mock_adb_device):
 
 def test_disconnect_when_not_connected(mock_config):
     """Test disconnecting when not connected."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
 
     result = controller.disconnect()
 
@@ -82,7 +79,7 @@ def test_disconnect_when_not_connected(mock_config):
 
 def test_is_connected_true(mock_config, mock_adb_device):
     """Test is_connected returns True when connected."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
     # mock_adb_device.available is set to True by the fixture
@@ -91,19 +88,19 @@ def test_is_connected_true(mock_config, mock_adb_device):
 
 def test_is_connected_false(mock_config):
     """Test is_connected returns False when not connected."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
 
     assert controller.is_connected() is False
 
 
-def test_shell_command_success(mock_config, mock_adb_device):
+def test_run_command_success(mock_config, mock_adb_device):
     """Test executing shell command successfully."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
     mock_adb_device.shell.return_value = b"command output"
 
-    result = controller.shell_command("ls")
+    result = controller.run_command("ls")
 
     assert result == b"command output"
     mock_adb_device.shell.assert_called_once()
@@ -111,18 +108,18 @@ def test_shell_command_success(mock_config, mock_adb_device):
     assert args[0] == "ls"
 
 
-def test_shell_command_not_connected(mock_config):
+def test_run_command_not_connected(mock_config):
     """Test shell command when not connected."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
 
-    result = controller.shell_command("ls")
+    result = controller.run_command("ls")
 
     assert result is None
 
 
 def test_tap(mock_config, mock_adb_device):
     """Test tap command."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
     controller.tap(100, 200)
@@ -132,60 +129,61 @@ def test_tap(mock_config, mock_adb_device):
 
 def test_open_app_success(mock_config, mock_adb_device):
     """Test opening an app successfully."""
-    app = PymordialApp(app_name="TestApp", package_name="com.test.app")
-
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
-    with patch.object(controller, "is_app_running", return_value=True):
-        result = controller.open_app(app, timeout=5, wait_time=1)
+    with (
+        patch.object(
+            controller, "find_package_by_keyword", return_value="com.test.app"
+        ),
+        patch.object(controller, "is_app_running", return_value=True),
+    ):
+        # Pass app name as string
+        result = controller.open_app("TestApp", timeout=5, wait_time=1)
 
         assert result is True
 
 
 def test_is_app_running_true(mock_config, mock_adb_device):
     """Test checking if app is running (returns True)."""
-    app = PymordialApp(app_name="TestApp", package_name="com.test.app")
-
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
     mock_adb_device.shell.return_value = b"com.test.app"
 
-    result = controller.is_app_running(app, max_retries=5, wait_time=1)
+    # Pass package name as string
+    result = controller.is_app_running("com.test.app", max_retries=5, wait_time=1)
 
     assert result is True
 
 
 def test_is_app_running_false(mock_config, mock_adb_device):
     """Test checking if app is running (returns False)."""
-    app = PymordialApp(app_name="TestApp", package_name="com.test.app")
-
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
     mock_adb_device.shell.return_value = b""
 
-    result = controller.is_app_running(app, max_retries=1, wait_time=1)
+    # Pass package name as string
+    result = controller.is_app_running("com.test.app", max_retries=1, wait_time=1)
 
     assert result is False
 
 
 def test_close_app(mock_config, mock_adb_device):
     """Test closing an app."""
-    app = PymordialApp(app_name="TestApp", package_name="com.test.app")
-
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
-    controller.close_app(app, timeout=5, wait_time=1)
+    # Pass app name or package name as string
+    controller.close_app(app_name="TestApp", timeout=5, wait_time=1)
 
     mock_adb_device.shell.assert_called()
 
 
 def test_press_home(mock_config, mock_adb_device):
     """Test pressing home button."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
     result = controller.go_home()
@@ -196,7 +194,7 @@ def test_press_home(mock_config, mock_adb_device):
 
 def test_press_enter(mock_config, mock_adb_device):
     """Test pressing enter button."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
     result = controller.press_enter()
@@ -206,7 +204,7 @@ def test_press_enter(mock_config, mock_adb_device):
 
 def test_press_esc(mock_config, mock_adb_device):
     """Test pressing esc button."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
     result = controller.press_esc()
@@ -216,18 +214,18 @@ def test_press_esc(mock_config, mock_adb_device):
 
 def test_start_stream(mock_config, mock_adb_device):
     """Test starting screen stream."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
     controller.connect()
 
     # mock_adb_device.available is True from fixture
-    with patch.object(controller, "shell_command", return_value=b""):
+    with patch.object(controller, "run_command", return_value=b""):
         result = controller.start_stream()
         assert isinstance(result, bool)
 
 
 def test_stop_stream(mock_config):
     """Test stopping screen stream."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
 
     controller.stop_stream()
 
@@ -236,7 +234,7 @@ def test_stop_stream(mock_config):
 
 def test_get_latest_frame_no_frame(mock_config):
     """Test getting latest frame when no frame available."""
-    controller = AdbController()
+    controller = PymordialAdbDevice()
 
     frame = controller.get_latest_frame()
 

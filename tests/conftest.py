@@ -1,11 +1,11 @@
 """Shared fixtures for Pymordial test suite."""
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from PIL import Image
 
-from pymordial.controller.adb_controller import AdbController
+from pymordial.controller.adb_device import PymordialAdbDevice
 from pymordial.controller.bluestacks_controller import BluestacksController
 from pymordial.controller.image_controller import ImageController
 from pymordial.core.pymordial_app import PymordialApp
@@ -17,9 +17,10 @@ def mock_config():
     """Mocks the configuration dictionary."""
     config = {
         "adb": {
-            "default_ip": "127.0.0.1",
+            "default_host": "127.0.0.1",
             "default_port": 5555,
             "default_timeout": 10,
+            "default_wait_time": 1,
             "keyevents": {
                 "home": 3,
                 "enter": 66,
@@ -40,6 +41,19 @@ def mock_config():
             "monkey_verbosity": 2,
             "app_check_retries": 20,
             "process_wait_timeout": 5,
+            "commands": {
+                "timeout": 10,
+                "read_timeout": 10,
+                "transport_timeout": 10,
+                "screenrecord": "screenrecord ...",
+                "dumpsys_focus": "dumpsys ...",
+                "force_stop": "am force-stop ...",
+                "screencap": "screencap -p",
+                "tap": "input tap ...",
+                "text": "input text ...",
+                "keyevent": "input keyevent ...",
+                "monkey": "monkey ...",
+            },
         },
         "bluestacks": {
             "process_name": "HD-Player.exe",
@@ -103,14 +117,38 @@ def mock_config():
         "easyocr": {"default_languages": ["en"]},
         "setup": {"installer_name": "bs5_installer.exe"},
     }
-    with patch("pymordial.utils.config.get_config", return_value=config):
+    # Patch get_config in multiple locations to ensure it's picked up
+    # regardless of when/where it was imported.
+    with (
+        patch("pymordial.utils.config.get_config", return_value=config),
+        patch(
+            "pymordial.controller.adb_device.get_config",
+            return_value=config,
+            create=True,
+        ),
+        patch(
+            "pymordial.controller.bluestacks_controller.get_config",
+            return_value=config,
+            create=True,
+        ),
+        patch(
+            "pymordial.controller.image_controller.get_config",
+            return_value=config,
+            create=True,
+        ),
+        patch(
+            "pymordial.controller.pymordial_controller.get_config",
+            return_value=config,
+            create=True,
+        ),
+    ):
         yield config
 
 
 @pytest.fixture
 def mock_adb_device():
     """Mocks the AdbDeviceTcp class."""
-    with patch("pymordial.controller.adb_controller.AdbDeviceTcp") as mock:
+    with patch("pymordial.controller.adb_device.AdbDeviceTcp") as mock:
         device_instance = mock.return_value
         device_instance.connect.return_value = True
         device_instance.shell.return_value = b""
@@ -120,8 +158,8 @@ def mock_adb_device():
 
 @pytest.fixture
 def mock_adb_controller(mock_adb_device, mock_config):
-    """Returns an AdbController with a mocked device."""
-    controller = AdbController()
+    """Returns an PymordialAdbDevice with a mocked device."""
+    controller = PymordialAdbDevice()
     return controller
 
 
@@ -146,7 +184,7 @@ def mock_bluestacks_controller(mock_adb_controller, mock_image_controller, mock_
         mock_rect.return_value = (0, 0, 1280, 720)
 
         controller = BluestacksController(
-            adb_controller=mock_adb_controller, image_controller=mock_image_controller
+            adb_device=mock_adb_controller, image_controller=mock_image_controller
         )
         return controller
 

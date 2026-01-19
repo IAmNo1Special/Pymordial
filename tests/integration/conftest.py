@@ -2,7 +2,7 @@
 
 import pytest
 
-from pymordial.controller.adb_controller import AdbController
+from pymordial.controller.adb_device import PymordialAdbDevice
 from pymordial.controller.bluestacks_controller import BluestacksController
 from pymordial.controller.image_controller import ImageController
 from pymordial.controller.pymordial_controller import PymordialController
@@ -10,8 +10,8 @@ from pymordial.controller.pymordial_controller import PymordialController
 
 @pytest.fixture(scope="session")
 def real_adb_controller():
-    """Returns a real AdbController connected to a device."""
-    controller = AdbController()
+    """Returns a real PymordialAdbDevice connected to a device."""
+    controller = PymordialAdbDevice()
     if not controller.connect():
         pytest.skip("No ADB device connected. Skipping integration tests.")
     return controller

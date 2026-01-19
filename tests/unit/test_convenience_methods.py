@@ -14,7 +14,7 @@ class TestConvenienceMethods:
     def controller(self):
         """Create a PymordialController with mocked sub-controllers."""
         with (
-            patch("pymordial.controller.pymordial_controller.AdbController"),
+            patch("pymordial.controller.pymordial_controller.PymordialAdbDevice"),
             patch("pymordial.controller.pymordial_controller.ImageController"),
             patch("pymordial.controller.pymordial_controller.TextController"),
             patch("pymordial.controller.pymordial_controller.BluestacksController"),
@@ -92,14 +92,14 @@ class TestConvenienceMethods:
         controller.send_text("Hello World")
         controller.adb.send_text.assert_called_once_with("Hello World")
 
-    def test_shell_command_delegates_to_adb(self, controller):
-        """Test that shell_command() delegates to adb.shell_command()."""
+    def test_run_command_delegates_to_adb(self, controller):
+        """Test that run_command() delegates to adb.run_command()."""
         mock_output = b"command output"
-        controller.adb.shell_command.return_value = mock_output
+        controller.adb.run_command.return_value = mock_output
 
-        result = controller.shell_command("pm list packages")
+        result = controller.run_command("pm list packages")
 
-        controller.adb.shell_command.assert_called_once_with("pm list packages")
+        controller.adb.run_command.assert_called_once_with("pm list packages")
         assert result == mock_output
 
     def test_get_current_app_delegates_to_adb(self, controller):
