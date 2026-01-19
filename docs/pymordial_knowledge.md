@@ -24,7 +24,7 @@ Pymordial is a Python automation framework for Android apps running in BlueStack
 ### 2.1 Facade Pattern
 
 **`PymordialController`** is the main facade coordinating:
-- `PymordialAdbDevice`: Android Debug Bridge operations
+- `AdbController`: Android Debug Bridge operations
 - `BluestacksController`: Emulator lifecycle management
 - `ImageController`: Computer vision (template matching, pixel detection)
 - `TextController`: OCR text extraction and search
@@ -385,7 +385,7 @@ uv run pytest --cov=pymordial
 ```
 src/pymordial/
 ├── controller/          # Main controllers
-│   ├── adb_device.py
+│   ├── adb_controller.py
 │   ├── bluestacks_controller.py
 │   ├── image_controller.py
 │   ├── text_controller.py
