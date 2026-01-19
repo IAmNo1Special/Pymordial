@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import psutil
 
-from pymordial.controller.adb_controller import AdbController
+from pymordial.controller.adb_device import PymordialAdbDevice
 from pymordial.controller.image_controller import ImageController
 from pymordial.core.elements.pymordial_image import PymordialImage
 from pymordial.core.pymordial_app import PymordialApp
@@ -177,7 +177,7 @@ class BluestacksController:
         self._autoset_filepath()
 
         self._pymordial_controller = pymordial_controller
-        self._adb_controller: AdbController = pymordial_controller.adb
+        self._adb_controller: PymordialAdbDevice = pymordial_controller.adb
         self._image_controller: ImageController = pymordial_controller.image
 
         self.bluestacks_state.register_handler(
@@ -454,6 +454,10 @@ class BluestacksController:
 
             time.sleep(DEFAULT_WAIT_TIME)
 
+    def is_ready(self) -> bool:
+        """Check if BlueStacks is in READY state."""
+        return self.bluestacks_state.current_state == EmulatorState.READY
+
     def kill_bluestacks(self) -> bool:
         """Kills the Bluestacks controller process.
 
@@ -500,10 +504,6 @@ class BluestacksController:
         except Exception as e:
             logger.error(f"Error in kill_bluestacks: {e}")
             raise ValueError(f"Failed to kill Bluestacks: {e}")
-
-    def is_ready(self) -> bool:
-        """Check if BlueStacks is in READY state."""
-        return self.bluestacks_state.current_state == EmulatorState.READY
 
     def __repr__(self) -> str:
         """Returns a string representation of the BluestacksController."""
