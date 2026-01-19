@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from logging import DEBUG, basicConfig, getLogger
 
 
-class PymordialDevice(ABC):
-    logger = getLogger("PymordialDevice")
+class PymordialBridgeDevice(ABC):
+    logger = getLogger("PymordialBridgeDevice")
     basicConfig(
         level=DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
