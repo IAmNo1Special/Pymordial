@@ -1,9 +1,8 @@
 adb:
-  default_ip: "127.0.0.1"
+  default_host: "127.0.0.1"
   default_port: 5555
   default_max_retries: 10
   default_wait_time: 1
-  default_timeout: 30
   process_wait_timeout: 10
   app_start_timeout: 60
   stream:
@@ -23,6 +22,9 @@ adb:
     esc: 4
     app_switch: "KEYCODE_APP_SWITCH"
   commands:
+    timeout: 30
+    read_timeout: 30
+    transport_timeout: 30
     screenrecord: "screenrecord --output-format=h264 --size {width}x{height} --bit-rate {bitrate} --time-limit {time_limit} -"
     dumpsys_focus: "dumpsys window windows | grep -E 'mCurrentFocus' | grep {package_name}"
     force_stop: "am force-stop {package_name}"
