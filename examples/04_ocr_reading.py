@@ -54,7 +54,7 @@ def main():
     logger.info("\n4. Searching for specific text...")
     search_term = "store"
     found = controller.text.check_text(
-        text_to_find=search_term, image_path=screenshot, case_sensitive=False
+        text_to_find=search_term, pymordial_screenshot=screenshot
     )
 
     if found:
@@ -64,7 +64,7 @@ def main():
 
     # Example 3: Find text coordinates
     logger.info("\n5. Finding text coordinates...")
-    coords = controller.text.find_text(text_to_find=search_term, image_path=screenshot)
+    coords = controller.text.find_text(text_to_find=search_term, pymordial_screenshot=screenshot)
 
     if coords:
         logger.info(f"   ✓ Found '{search_term}' at coordinates: {coords}")
@@ -74,14 +74,14 @@ def main():
     # Example 4: Using custom extraction strategy
     logger.info("\n6. Using default extraction strategy...")
     strategy = DefaultExtractStrategy()
-    custom_text = controller.text.read_text(screenshot, strategy=strategy)
+    custom_text = controller.text.read_text(pymordial_screenshot=screenshot, strategy=strategy)
 
     logger.info(f"   Extracted {len(custom_text)} lines with strategy")
 
     # Example 5: Game-specific strategy (if using Revomon)
     logger.info("\n7. Using Revomon-specific strategy...")
     revomon_strategy = RevomonTextStrategy(mode="default")
-    revomon_text = controller.text.read_text(screenshot, strategy=revomon_strategy)
+    revomon_text = controller.text.read_text(pymordial_screenshot=screenshot, strategy=revomon_strategy)
 
     logger.info(f"   Extracted {len(revomon_text)} lines with Revomon strategy")
 

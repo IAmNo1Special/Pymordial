@@ -33,7 +33,7 @@ def main():
     # Define an app (using Android Settings as example)
     logger.info("2. Defining Android Settings app...")
     settings_app = PymordialApp(
-        app_name="Settings", package_name="com.android.settings"
+        app_name="Settings", package_name="com.bluestacks.settings"
     )
     logger.info(f"   Created: {settings_app}")
 
