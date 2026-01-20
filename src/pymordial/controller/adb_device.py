@@ -1,19 +1,28 @@
 """Controller for ADB interactions."""
 
+from __future__ import annotations
+
 import copy
 import os
 import threading
-from logging import WARNING, getLogger
+from logging import DEBUG, WARNING, basicConfig, getLogger
 from time import sleep, time
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pymordial.core.pymordial_app import PymordialApp
+
+from io import BytesIO
 
 import av
 import numpy as np
 from adb_shell.adb_device import AdbDeviceTcp
 from adb_shell.auth.sign_pythonrsa import PythonRSASigner
+from PIL import Image
 
 from pymordial.core.pymordial_bridge import PymordialBridgeDevice
-from pymordial.utils.config import AdbConfig, get_config
 from pymordial.utils import PymordialStreamReader
+from pymordial.utils.config import AdbConfig, get_config
 
 
 class PymordialAdbDevice(PymordialBridgeDevice):
@@ -47,6 +56,10 @@ class PymordialAdbDevice(PymordialBridgeDevice):
             config: A TypedDict containing ADB configuration. Defaults to package defaults.
             adbshell_log_level: The log level for adb-shell (e.g. logging.WARNING).
         """
+        self.logger = getLogger("PymordialAdbDevice")
+        basicConfig(
+            level=DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
         self.logger.debug("Initalizing PymordialAdbDevice...")
         self.config = copy.deepcopy(config or get_config()["adb"])
         self.host: str = host or self.config["default_host"]
@@ -64,16 +77,38 @@ class PymordialAdbDevice(PymordialBridgeDevice):
         self._is_streaming = threading.Event()
         self.logger.debug("PymordialAdbDevice initalized.")
 
+    @property
+    def is_streaming(self) -> bool:
+        """Check if streaming is currently active.
+
+        Returns:
+            True if streaming is active, False otherwise.
+        """
+        return self._is_streaming.is_set()
+
     def find_package_by_keyword(self, keyword) -> str | None:
         self.logger.debug("Finding package by keyword...")
         # 'pm list packages' returns 'package:com.name.app'
         # We strip 'package:' and filter for your keyword
-        output = self.run_command(f"pm list packages | grep -i {keyword}", decode=True)
+        output = self.run_command("pm list packages", decode=True)
         if output:
-            # Returns the first matching package found
-            self.logger.debug("Package found.")
-            return output.splitlines()[0].replace("package:", "").strip()
-        self.logger.debug("Package not found.")
+            packages = [
+                line.replace("package:", "").strip() for line in output.splitlines()
+            ]
+            # 1. Try exact match
+            if keyword in packages:
+                self.logger.debug(f"Exact package match found: {keyword}")
+                return keyword
+            # 2. Try case-insensitive partial match
+            matches = [pkg for pkg in packages if keyword.lower() in pkg.lower()]
+            if matches:
+                # Return the shortest match (best fit for keyword)
+                best_match = min(matches, key=len)
+                self.logger.debug(
+                    f"Partial package match found: {best_match} (best of {len(matches)} matches)"
+                )
+                return best_match
+        self.logger.debug(f"No package found matching '{keyword}'")
         return None
 
     def get_launch_activity(self, package_name) -> str | None:
@@ -90,9 +125,9 @@ class PymordialAdbDevice(PymordialBridgeDevice):
         lines = output.strip().splitlines()
         if lines:
             activity = lines[-1].strip()
-            # Ensure it's in package/activity format if it's not already
-            if "/" not in activity:
-                activity = f"{package_name}/{activity}"
+            if "/" not in activity or "No activity found" in activity:
+                self.logger.debug(f"No valid activity found for {package_name}")
+                return None
 
             self.logger.debug(f"Launch activity found: {activity}")
             return activity
@@ -192,22 +227,51 @@ class PymordialAdbDevice(PymordialBridgeDevice):
         self.logger.debug(f"Shell command {command} executed successfully.")
         return output
 
+    def get_focused_app(self) -> dict[str, str] | None:
+        """Gets information about the currently focused app.
+
+        Returns:
+            A dictionary with 'package' and 'activity', or None if failed.
+        """
+        self.logger.debug("Getting focused app info...")
+        # 'dumpsys window windows' is more reliable than just 'dumpsys window' on some Android versions
+        # Look for mCurrentFocus or mFocusedApp lines
+        output = self.run_command(
+            "dumpsys window | grep -E 'mCurrentFocus|mFocusedApp'", decode=True
+        )
+        if not output:
+            return None
+
+        # Format: mCurrentFocus=Window{... u0 com.android.settings/com.android.settings.Settings}
+        # Format: mFocusedApp=AppWindowToken{... token=Token{... u0 com.example/com.example.MainActivity}}
+        import re
+
+        match = re.search(r"([a-zA-Z0-9._]+)/([a-zA-Z0-9._$]+)", output)
+        if match:
+            pkg, activity = match.groups()
+            self.logger.debug(f"Focused app: package={pkg}, activity={activity}")
+            return {"package": pkg, "activity": activity}
+
+        self.logger.debug("Could not parse focused app info from dumpsys")
+        return None
+
     def open_app(
         self,
         app_name: str,
+        package_name: str | None = None,
         timeout: float = 10.0,
         wait_time: float = 1.0,
     ) -> bool:
-        """Opens an app by name, with optional verification.
+        """Opens an app by name or package, with optional verification.
         Args:
-            app_name: Name/keyword to search for the package.
+            app_name: Name/keyword to search for the package if package_name not provided.
+            package_name: Optional exact package name.
             timeout: Max seconds to wait for app to start (if verify=True).
             wait_time: Seconds between verification retries.
-            verify: If True, poll to confirm app is running.
         Returns:
-            True if launched (and verified if verify=True), False otherwise.
+            True if launched, False otherwise.
         """
-        pkg = self.find_package_by_keyword(app_name)
+        pkg = package_name or self.find_package_by_keyword(app_name)
         if not pkg:
             self.logger.error(f"Could not find package for '{app_name}'")
             return False
@@ -237,11 +301,45 @@ class PymordialAdbDevice(PymordialBridgeDevice):
     # to be made into class variables
     def is_app_running(
         self,
-        package_name: str,
+        package_name: str | None = None,
+        pymordial_app: "PymordialApp" | None = None,
+        app_name: str | None = None,
         max_retries: int = 2,
         wait_time: int = 1,
     ) -> bool:
-        """Checks if an app is running using pidof command."""
+        """Checks if an app is running using pidof command.
+
+        Args:
+            package_name: Direct package name (e.g., 'com.android.settings').
+            pymordial_app: PymordialApp instance to extract package from.
+            app_name: App name keyword to search for.
+            max_retries: Number of retries.
+            wait_time: Time to wait between retries.
+
+        Returns:
+            True if running, False otherwise.
+
+        Priority: package_name > pymordial_app > app_name.
+        """
+        # Handle case where PymordialApp might be passed positionally as package_name
+        if package_name and not isinstance(package_name, str):
+            if hasattr(package_name, "package_name"):
+                pymordial_app = package_name
+                package_name = None
+
+        pkg = (
+            package_name
+            or (pymordial_app.package_name if pymordial_app else None)
+            or (self.find_package_by_keyword(app_name) if app_name else None)
+        )
+
+        if not pkg:
+            self.logger.warning(
+                f"Could not resolve package for is_app_running (package_name={package_name}, "
+                f"pymordial_app={pymordial_app}, app_name={app_name})"
+            )
+            return False
+
         if not self._device.available:
             self.logger.debug(
                 "PymordialAdbDevice device not connected. Attempting to reconnect..."
@@ -254,22 +352,20 @@ class PymordialAdbDevice(PymordialBridgeDevice):
 
         for attempt in range(max_retries):
             try:
-                output = self.run_command(f"pidof {package_name}", decode=True)
+                output = self.run_command(f"pidof {pkg}", decode=True)
                 if output and output.strip():
-                    self.logger.debug(
-                        f"Found {package_name} running with PID: {output.strip()}"
-                    )
+                    self.logger.debug(f"Found {pkg} running with PID: {output.strip()}")
                     return True
             except Exception as e:
                 self.logger.debug(f"pidof check failed: {e}")
 
             if attempt < max_retries - 1:
                 self.logger.debug(
-                    f"{package_name} not found. Retrying ({attempt + 1}/{max_retries})..."
+                    f"{pkg} not found. Retrying ({attempt + 1}/{max_retries})..."
                 )
                 sleep(wait_time)
 
-        self.logger.debug(f"{package_name} not found after {max_retries} attempts")
+        self.logger.debug(f"{pkg} not found after {max_retries} attempts")
         return False
 
     def show_recent_apps(self) -> bool:
@@ -340,6 +436,38 @@ class PymordialAdbDevice(PymordialBridgeDevice):
 
         self.logger.warning(f"{pkg} may still be running after {timeout}s")
         return False
+
+    def close_all_apps(self, exclude: list[str] | None = None) -> None:
+        """Force stops all packages to clear the device state.
+
+        Args:
+            exclude: Optional list of package names to exclude from closing.
+        """
+        self.logger.debug("Closing all apps...")
+
+        # Get list of all packages
+        output = self.run_command("pm list packages", decode=True)
+        if not output:
+            self.logger.warning("No packages found.")
+            return
+
+        # Output format: package:com.example.app
+        # run_command with decode=True returns str
+        packages = [
+            line.replace("package:", "").strip()
+            for line in output.splitlines()
+            if line.strip()
+        ]
+        exclude = exclude or []
+
+        count = 0
+        for pkg in packages:
+            if pkg in exclude:
+                continue
+            self.run_command(f"am force-stop {pkg}")
+            count += 1
+
+        self.logger.debug(f"Closed {count} apps.")
 
     def tap(self, x: int, y: int) -> bool:
         """Performs a simple tap at (x, y).
@@ -429,12 +557,10 @@ class PymordialAdbDevice(PymordialBridgeDevice):
 
     # width and height defaults need
     # to be made into class variables
-    def start_stream(self, width: int = 1920, height: int = 1080) -> bool:
+    def start_stream(self) -> bool:
         """Starts screen streaming using adb-shell's streaming_shell with PyAV decoding.
 
-        Args:
-            width: Stream width.
-            height: Stream height.
+        Automatically detects resolution from a screenshot.
 
         Returns:
             True if stream started successfully, False otherwise.
@@ -448,8 +574,32 @@ class PymordialAdbDevice(PymordialBridgeDevice):
             self.logger.error("Cannot start stream: not connected")
             return False
 
+        # Auto-detect resolution
+        screenshot_bytes = self.capture_screenshot()
+        if not screenshot_bytes:
+            self.logger.error(
+                "Cannot start stream: failed to capture screenshot for resolution detection"
+            )
+            return False
+
+        try:
+            img = Image.open(BytesIO(screenshot_bytes))
+            width, height = img.size
+            size_arg = f"{width}x{height}"
+            self.logger.debug(f"Detected resolution: {width}x{height}")
+        except Exception as e:
+            self.logger.error(f"Error detecting resolution: {e}")
+            return False
+
         self._is_streaming.set()
-        command = f"screenrecord --output-format=h264 --size {width}x{height} --bit-rate {self.config['stream']['bitrate']} --time-limit {self.config['stream']['time_limit']} -"
+        command = (
+            f"screenrecord --output-format=h264 "
+            # f"--verbose "  <--- DELETE THIS LINE
+            f"--size {size_arg} "
+            f"--bit-rate {self.config['stream']['bitrate']} "
+            f"--time-limit {self.config['stream']['time_limit']} "
+            f"-"
+        )
 
         stream_reader = PymordialStreamReader(
             queue_size=self.config["stream"]["queue_size"],
@@ -476,15 +626,19 @@ class PymordialAdbDevice(PymordialBridgeDevice):
 
     def stop_stream(self) -> None:
         """Stops the screen stream."""
-        if not self._is_streaming.is_set():
-            return
-        self.logger.info("Stopping PymordialAdbDevice stream...")
+        self.logger.debug("Stopping PymordialAdbDevice stream...")
         self._is_streaming.clear()
         if self._stream_thread and self._stream_thread.is_alive():
             self._stream_thread.join(timeout=self.config["stream"]["stop_timeout"])
-        # No lock needed - assignment is atomic
+
+        # Cleanup: kill background screenrecord and remove temp file
+        try:
+            self.run_command("pkill -9 screenrecord")
+        except Exception:
+            pass  # Best effort cleanup
+
         self._latest_frame = None
-        self.logger.info("PymordialAdbDevice stream stopped")
+        self.logger.debug("PymordialAdbDevice stream stopped")
 
     def get_latest_frame(self) -> np.ndarray | None:
         """Gets the latest decoded frame from the stream.
@@ -496,6 +650,53 @@ class PymordialAdbDevice(PymordialBridgeDevice):
         # Copy to prevent caller from modifying the frame
         frame = self._latest_frame
         return frame.copy() if frame is not None else None
+
+    def capture_screen(self) -> "bytes | np.ndarray | None":
+        """Captures the current BlueStacks screen using the appropriate capture strategy.
+
+        Returns:
+            The screenshot as bytes or numpy array, or None if failed.
+        """
+
+        if not self.is_connected():
+            self.connect()
+            if not self.is_connected():
+                self.logger.warning(
+                    "Cannot capture screen - ADB controller is not initialized"
+                )
+                return None
+
+        # Always use streaming - start if not active
+        if not self.is_streaming:
+            self.logger.info("Starting stream for capture_screen...")
+            if not self.start_stream():
+                self.logger.error(
+                    "Failed to start stream, falling back to capture_screenshot."
+                )
+                return self.capture_screenshot()
+
+        frame = self.get_latest_frame()
+        if frame is not None:
+            # Validate frame isn't corrupted (all same color)
+            if frame.std() < 1.0:  # Nearly uniform = likely corrupted
+                self.logger.warning(
+                    "Frame appears corrupted (uniform color), restarting stream..."
+                )
+                self.stop_stream()
+                if self.start_stream():
+                    frame = self.get_latest_frame()
+                    if frame is not None and frame.std() >= 1.0:
+                        self.logger.debug("Returning fresh frame after restart.")
+                        return frame
+                self.logger.error("Failed to get valid frame after restart")
+                return self.capture_screenshot()
+            self.logger.debug("Returning latest frame from stream.")
+            return frame
+
+        self.logger.warning(
+            "Stream active but no frame available. Falling back to screenshot."
+        )
+        return self.capture_screenshot()
 
     def press_enter(self) -> bool:
         """Presses the Enter key.
@@ -576,6 +777,7 @@ class PymordialAdbDevice(PymordialBridgeDevice):
         self, command: str, stream_reader: PymordialStreamReader
     ) -> None:
         """Worker thread that reads H264 stream and decodes with PyAV."""
+        self.logger.debug(f"Starting stream worker with command: {command}")
         try:
             # Start streaming shell
             stream_gen = self._device.streaming_shell(command, decode=False)

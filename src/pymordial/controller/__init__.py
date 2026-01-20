@@ -1,13 +1,12 @@
 from .adb_device import PymordialAdbDevice
-from .bluestacks_controller import BluestacksController, BluestacksElements
+from .bluestacks_device import PymordialBluestacksDevice
 from .image_controller import ImageController
 from .pymordial_controller import PymordialController
 from .text_controller import TextController
 
 __all__ = [
     "PymordialAdbDevice",
-    "BluestacksController",
-    "BluestacksElements",
+    "PymordialBluestacksDevice",
     "ImageController",
     "PymordialController",
     "TextController",

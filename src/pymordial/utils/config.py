@@ -16,7 +16,7 @@ _PACKAGE_ROOT = Path(__file__).resolve().parents[1]  # src/pymordial
 _DEFAULT_CONFIG_PATH = _PACKAGE_ROOT / "configs.yaml"
 
 # User overrides (gitignored, optional)
-_USER_CONFIG_PATH = _PROJECT_ROOT / "config.yaml"
+_USER_CONFIG_PATH = _PROJECT_ROOT / "pymordial_config.yaml"
 
 _CONFIG = None
 
@@ -63,11 +63,19 @@ class AdbConfig(TypedDict):
     app_check_retries: int
     keyevents: AdbKeyEventsConfig
     commands: AdbCommandsConfig
+    adb_screenshot_img: str
+    adb_screenshot_img_label: str
+
+
+class BlueStacksAssetsConfig(TypedDict):
+    bluestacks_my_games_button: str
+    bluestacks_store_search_input: str
+    bluestacks_store_button: str
+    bluestacks_playstore_search_input: str
+    bluestacks_loading_screen_img: str
 
 
 class BluestacksUiConfig(TypedDict):
-    loading_img_label: str
-    loading_text: str
     my_games_button_label: str
     my_games_text: str
     store_search_input_label: str
@@ -75,22 +83,25 @@ class BluestacksUiConfig(TypedDict):
     store_button_label: str
     playstore_search_input_label: str
     loading_screen_img_label: str
-    adb_screenshot_img_label: str
+    assets: BlueStacksAssetsConfig
 
 
 class BluestacksConfig(TypedDict):
-    resolution: list[int]
-    default_max_retries: int
-    default_wait_time: int
-    default_timeout: int
+    default_resolution: list[int]
+    default_open_app_max_retries: int
+    default_open_app_wait_time: int
+    default_open_app_timeout: int
     default_transport_timeout_s: float
-    wait_for_load_timeout: int
+    default_load_timeout: int
+    default_load_wait_time: int
+    default_ui_load_wait_time: int
     hd_player_exe: str
     window_title: str
     ui: BluestacksUiConfig
 
 
 class ImageControllerConfig(TypedDict):
+    default_wait_time: int
     default_find_ui_retries: int
 
 
@@ -174,16 +185,6 @@ class SetupConfig(TypedDict):
     reg_key: str
 
 
-class AssetsConfig(TypedDict):
-    bluestacks_loading_img: str
-    bluestacks_my_games_button: str
-    bluestacks_store_search_input: str
-    bluestacks_store_button: str
-    bluestacks_playstore_search_input: str
-    bluestacks_loading_screen_img: str
-    adb_screenshot_img: str
-
-
 class ControllerConfig(TypedDict):
     default_click_times: int
     default_max_tries: int
@@ -199,7 +200,6 @@ class PymordialConfig(TypedDict):
     extract_strategy: ExtractStrategyConfig
     easyocr: EasyOcrConfig
     setup: SetupConfig
-    assets: AssetsConfig
     controller: ControllerConfig
 
 
@@ -221,7 +221,6 @@ def _validate_config(config: dict) -> None:
         "extract_strategy",
         "easyocr",
         "setup",
-        "assets",
         "controller",
     ]
     for key in required_keys:
@@ -233,8 +232,10 @@ def _validate_config(config: dict) -> None:
         raise ValueError("Missing required config section: bluestacks.ui")
     if "commands" not in config["adb"]:
         raise ValueError("Missing required config section: adb.commands")
-    if "assets" not in config:
-        raise ValueError("Missing required config section: assets")
+    if "assets" not in config["adb"]:
+        raise ValueError("Missing required config section: adb.assets")
+    if "assets" not in config["bluestacks"]["ui"]:
+        raise ValueError("Missing required config section: bluestacks.ui.assets")
 
 
 def _load_config() -> PymordialConfig:

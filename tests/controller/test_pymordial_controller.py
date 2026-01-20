@@ -9,7 +9,9 @@ from pymordial.core.pymordial_app import PymordialApp
 def test_pymordial_controller_init():
     """Test PymordialController initialization."""
     with patch("pymordial.controller.pymordial_controller.PymordialAdbDevice"):
-        with patch("pymordial.controller.pymordial_controller.BluestacksController"):
+        with patch(
+            "pymordial.controller.pymordial_controller.PymordialBluestacksDevice"
+        ):
             with patch("pymordial.controller.pymordial_controller.ImageController"):
                 controller = PymordialController()
                 assert controller.adb is not None
@@ -20,7 +22,9 @@ def test_pymordial_controller_init():
 def test_add_app():
     """Test adding an app."""
     with patch("pymordial.controller.pymordial_controller.PymordialAdbDevice"):
-        with patch("pymordial.controller.pymordial_controller.BluestacksController"):
+        with patch(
+            "pymordial.controller.pymordial_controller.PymordialBluestacksDevice"
+        ):
             with patch("pymordial.controller.pymordial_controller.ImageController"):
                 controller = PymordialController()
                 app = PymordialApp(app_name="TestApp", package_name="com.test")
