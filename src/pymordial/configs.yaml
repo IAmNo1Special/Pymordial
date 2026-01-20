@@ -1,17 +1,16 @@
 adb:
   default_host: "127.0.0.1"
   default_port: 5555
-  default_max_retries: 10
+  default_max_retries: 3
   default_wait_time: 1
-  process_wait_timeout: 10
   app_start_timeout: 60
   stream:
     resolution: 1920
-    bitrate: "5M"
+    bitrate: "4M"
     time_limit: 180
     queue_size: 100
-    read_timeout: 0.1
-    start_timeout_iterations: 50
+    read_timeout: 1.0
+    start_timeout_iterations: 100
     start_wait: 0.1
     stop_timeout: 2
   monkey_verbosity: 1
@@ -33,18 +32,22 @@ adb:
     text: "input text {text}"
     keyevent: "input keyevent {keycode}"
     monkey: "monkey -p {package_name} -v {verbosity}"
+  adb_screenshot_img_label: "adb_screenshot_img"
+  assets:
+    adb_screenshot_img: "adb_screenshot_img.png"
 bluestacks:
-  resolution: [1920, 1080]
-  default_max_retries: 5
-  default_wait_time: 1
-  default_timeout: 30
+  default_resolution: [1920, 1080]
+  default_open_app_max_retries: 5
+  default_open_app_wait_time: 1
+  default_open_app_timeout: 30
   default_transport_timeout_s: 60.0
-  wait_for_load_timeout: 60
+  default_process_kill_timeout: 10
+  default_load_wait_time: 1
+  default_load_timeout: 60
+  default_ui_load_wait_time: 10
   hd_player_exe: "HD-Player.exe"
   window_title: "Bluestacks App Player"
   ui:
-    loading_img_label: "bluestacks_loading_img"
-    loading_text: "Starting BlueStacks"
     my_games_button_label: "bluestacks_my_games_button"
     my_games_text: "My games"
     store_search_input_label: "bluestacks_store_search_input"
@@ -52,8 +55,15 @@ bluestacks:
     store_button_label: "bluestacks_store_button"
     playstore_search_input_label: "bluestacks_playstore_search_input"
     loading_screen_img_label: "bluestacks_loading_screen_img"
-    adb_screenshot_img_label: "adb_screenshot_img"
+
+    assets:
+      my_games_button: "bluestacks_my_games_button.png"
+      store_search_input: "bluestacks_store_search_input.png"
+      store_button: "bluestacks_store_button.png"
+      playstore_search_input: "bluestacks_playstore_search_input.png"
+      loading_screen_img: "bluestacks_loading_screen_img.png"
 image_controller:
+  default_wait_time: 1
   default_find_ui_retries: 2
 app:
   action_timeout: 60
@@ -106,14 +116,6 @@ setup:
   installer_name: "BlueStacksInstaller.exe"
   download_url: "https://cloud.bluestacks.com/api/getdownloadnow?platform=win&win_arch=64&main_program=app_player"
   reg_key: "SOFTWARE\\BlueStacks_nxt"
-assets:
-  bluestacks_loading_img: "bluestacks_loading_img.png"
-  bluestacks_my_games_button: "bluestacks_my_games_button.png"
-  bluestacks_store_search_input: "bluestacks_store_search_input.png"
-  bluestacks_store_button: "bluestacks_store_button.png"
-  bluestacks_playstore_search_input: "bluestacks_playstore_search_input.png"
-  bluestacks_loading_screen_img: "bluestacks_loading_screen_img.png"
-  adb_screenshot_img: "adb_screenshot_img.png"
 controller:
   default_click_times: 1
   default_max_tries: 2
