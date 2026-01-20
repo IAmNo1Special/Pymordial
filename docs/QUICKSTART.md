@@ -45,7 +45,7 @@ if controller.adb.is_connected():
     print("✓ Connected to BlueStacks!")
     
     # Get Android version
-    result = controller.adb.run_command("getprop ro.build.version.release")
+    result = controller.adb.shell_command("getprop ro.build.version.release")
     print(f"Android version: {result.decode().strip()}")
     
     # Navigate to home screen

@@ -38,7 +38,7 @@ View report: `open htmlcov/index.html`
 
 ```
 tests/
-├── controller/         # PymordialAdbDevice, BluestacksController, etc.
+├── controller/         # AdbController, BluestacksController, etc.
 ├── core/              # PymordialApp, PymordialElement, Screens
 ├── ocr/               # Tesseract, EasyOCR, strategies
 └── integration/       # End-to-end tests with real BlueStacks
@@ -52,14 +52,14 @@ tests/
 
 ```python
 from unittest.mock import MagicMock, patch
-from pymordial.controller.adb_device import PymordialAdbDevice
+from pymordial.controller.adb_controller import AdbController
 
 def test_tap():
     """Test ADB tap command."""
-    controller = PymordialAdbDevice(ip="127.0.0.1", port=5555)
+    controller = AdbController(ip="127.0.0.1", port=5555)
     
     # Mock the shell command
-    with patch.object(controller, 'run_command') as mock_shell:
+    with patch.object(controller, 'shell_command') as mock_shell:
         result = controller.tap(100, 200)
         
         # Verify correct command was called
@@ -131,16 +131,16 @@ uv run pytest -m "integration and not slow"
 ### Mock ADB Responses
 
 ```python
-@patch("pymordial.controller.adb_device.AdbShell")
+@patch("pymordial.controller.adb_controller.AdbShell")
 def test_get_android_version(mock_adb_shell):
     mock_device = MagicMock()
     mock_device.shell.return_value = b"11\n"
     mock_adb_shell.return_value = mock_device
     
-    controller = PymordialAdbDevice()
+    controller = AdbController()
     controller.connect()
     
-    result = controller.run_command("getprop ro.build.version.release")
+    result = controller.shell_command("getprop ro.build.version.release")
     assert result == b"11\n"
 ```
 
