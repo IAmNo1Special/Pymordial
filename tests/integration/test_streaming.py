@@ -51,6 +51,10 @@ def test_streaming_performance(real_pymordial_controller: PymordialController):
     Note: This test verifies streaming functionality rather than making
     rigid speed comparisons, as performance varies by environment.
     """
+    # Ensure clean state from previous tests
+    real_pymordial_controller.stop_streaming()
+    time.sleep(2)
+
     # Start streaming
     try:
         if not real_pymordial_controller.start_streaming():
@@ -60,6 +64,12 @@ def test_streaming_performance(real_pymordial_controller: PymordialController):
 
     try:
         # Time streaming frame access (10 frames)
+        # Warmup: Wait for first frame ensuring stream is active
+        for _ in range(50):
+            if real_pymordial_controller.get_frame() is not None:
+                break
+            time.sleep(0.1)
+
         start_time = time.time()
         valid_frames = 0
         for _ in range(10):

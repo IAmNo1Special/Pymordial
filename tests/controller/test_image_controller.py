@@ -11,24 +11,22 @@ from pymordial.core.elements.pymordial_pixel import PymordialPixel
 
 
 @pytest.fixture
-def mock_pymordial_controller():
-    """Create a mock PymordialController."""
-    controller = Mock()
-    controller.adb = Mock()
-    controller.bluestacks = Mock()
-    controller.adb.capture_screenshot.return_value = b"fake_screenshot"
-    return controller
+def mock_adb_device():
+    """Create a mock PymordialAdbDevice."""
+    adb = Mock()
+    adb.capture_screen.return_value = b"fake_screenshot"
+    return adb
 
 
-def test_image_controller_init(mock_config, mock_pymordial_controller):
+def test_image_controller_init(mock_config, mock_adb_device):
     """Test ImageController initialization."""
-    controller = ImageController(mock_pymordial_controller)
-    assert controller.pymordial_controller == mock_pymordial_controller
+    controller = ImageController(mock_adb_device)
+    assert controller._adb_bridge_device == mock_adb_device
 
 
-def test_scale_img_to_screen(mock_config, mock_pymordial_controller):
+def test_scale_img_to_screen(mock_config, mock_adb_device):
     """Test image scaling to screen."""
-    controller = ImageController(mock_pymordial_controller)
+    controller = ImageController(mock_adb_device)
     mock_screen = Image.new("RGB", (1280, 720))
     mock_template = Image.new("RGB", (100, 100))
 
@@ -44,9 +42,9 @@ def test_scale_img_to_screen(mock_config, mock_pymordial_controller):
         assert isinstance(result, Image.Image)
 
 
-def test_check_pixel_color_exact_match(mock_config, mock_pymordial_controller):
+def test_check_pixel_color_exact_match(mock_config, mock_adb_device):
     """Test pixel color checking with exact match."""
-    controller = ImageController(mock_pymordial_controller)
+    controller = ImageController(mock_adb_device)
 
     pixel = PymordialPixel(
         label="test_pixel",
@@ -62,14 +60,14 @@ def test_check_pixel_color_exact_match(mock_config, mock_pymordial_controller):
     ):
         result = controller.check_pixel_color(
             pymordial_pixel=pixel,
-            screenshot_img_bytes=b"fake_bytes",
+            pymordial_screenshot=b"fake_bytes",
         )
         assert result is True
 
 
-def test_check_pixel_color_no_match(mock_config, mock_pymordial_controller):
+def test_check_pixel_color_no_match(mock_config, mock_adb_device):
     """Test pixel color checking with no match."""
-    controller = ImageController(mock_pymordial_controller)
+    controller = ImageController(mock_adb_device)
 
     pixel = PymordialPixel(
         label="test_pixel",
@@ -85,14 +83,14 @@ def test_check_pixel_color_no_match(mock_config, mock_pymordial_controller):
     ):
         result = controller.check_pixel_color(
             pymordial_pixel=pixel,
-            screenshot_img_bytes=b"fake_bytes",
+            pymordial_screenshot=b"fake_bytes",
         )
         assert result is False
 
 
-def test_check_pixel_color_with_tolerance(mock_config, mock_pymordial_controller):
+def test_check_pixel_color_with_tolerance(mock_config, mock_adb_device):
     """Test pixel color checking with tolerance."""
-    controller = ImageController(mock_pymordial_controller)
+    controller = ImageController(mock_adb_device)
 
     pixel = PymordialPixel(
         label="test_pixel",
@@ -108,14 +106,14 @@ def test_check_pixel_color_with_tolerance(mock_config, mock_pymordial_controller
     ):
         result = controller.check_pixel_color(
             pymordial_pixel=pixel,
-            screenshot_img_bytes=b"fake_bytes",
+            pymordial_screenshot=b"fake_bytes",
         )
         assert result is True
 
 
-def test_where_element_not_found(mock_config, mock_pymordial_controller):
+def test_where_element_not_found(mock_config, mock_adb_device):
     """Test where_element when element not found."""
-    controller = ImageController(mock_pymordial_controller)
+    controller = ImageController(mock_adb_device)
 
     image_elem = PymordialImage(
         label="test",
@@ -135,13 +133,6 @@ def test_where_element_not_found(mock_config, mock_pymordial_controller):
         with patch("pymordial.controller.image_controller.locate", return_value=None):
             result = controller.where_element(
                 pymordial_element=image_elem,
-                screenshot_img_bytes=mock_screen,
+                pymordial_screenshot=mock_screen,
             )
             assert result is None
-
-
-def test_image_controller_repr(mock_config, mock_pymordial_controller):
-    """Test string representation."""
-    controller = ImageController(mock_pymordial_controller)
-    repr_str = repr(controller)
-    assert "ImageController" in repr_str

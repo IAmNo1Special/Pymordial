@@ -118,7 +118,10 @@ class PymordialApp:
                 f"{self.app_name}'s pymordial_controller is not initialized"
             )
         result = self.pymordial_controller.adb.open_app(
-            self, timeout=APP_ACTION_TIMEOUT, wait_time=APP_ACTION_WAIT_TIME
+            self.app_name,
+            package_name=self.package_name,
+            timeout=APP_ACTION_TIMEOUT,
+            wait_time=APP_ACTION_WAIT_TIME,
         )
         if result:
             self.app_state.transition_to(AppState.LOADING)
@@ -179,7 +182,9 @@ class PymordialApp:
                 f"{self.app_name}'s pymordial_controller is not initialized"
             )
         result = self.pymordial_controller.adb.close_app(
-            self, timeout=APP_ACTION_TIMEOUT, wait_time=APP_CLOSE_WAIT_TIME
+            package_name=self.package_name,
+            timeout=APP_ACTION_TIMEOUT,
+            wait_time=APP_CLOSE_WAIT_TIME,
         )
         if result:
             self.app_state.transition_to(AppState.CLOSED)

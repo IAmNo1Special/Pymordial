@@ -6,7 +6,7 @@ import pytest
 from PIL import Image
 
 from pymordial.controller.adb_device import PymordialAdbDevice
-from pymordial.controller.bluestacks_controller import BluestacksController
+from pymordial.controller.bluestacks_device import PymordialBluestacksDevice
 from pymordial.controller.image_controller import ImageController
 from pymordial.core.pymordial_app import PymordialApp
 from pymordial.core.pymordial_screen import PymordialScreen
@@ -61,7 +61,7 @@ def mock_config():
             "default_transport_timeout_s": 30,
             "wait_for_load_timeout": 60,
             "hd_player_exe": "HD-Player.exe",
-            "resolution": [1280, 720],
+            "default_resolution": [1280, 720],
             "default_max_retries": 3,
             "default_wait_time": 1,
             "default_timeout": 30,
@@ -127,7 +127,7 @@ def mock_config():
             create=True,
         ),
         patch(
-            "pymordial.controller.bluestacks_controller.get_config",
+            "pymordial.controller.bluestacks_device.get_config",
             return_value=config,
             create=True,
         ),
@@ -166,25 +166,23 @@ def mock_adb_controller(mock_adb_device, mock_config):
 @pytest.fixture
 def mock_image_controller(mock_config):
     """Returns an ImageController with mocked dependencies."""
-    mock_pymordial = Mock()
-    mock_pymordial.adb = Mock()
-    mock_pymordial.bluestacks = Mock()
-
-    controller = ImageController(mock_pymordial)
+    mock_adb = Mock()
+    controller = ImageController(mock_adb)
     return controller
 
 
 @pytest.fixture
 def mock_bluestacks_controller(mock_adb_controller, mock_image_controller, mock_config):
-    """Returns a BluestacksController with mocked dependencies."""
+    """Returns a PymordialBluestacksDevice with mocked dependencies."""
     with patch(
-        "pymordial.controller.bluestacks_controller.win32gui.GetWindowRect"
+        "pymordial.controller.bluestacks_device.win32gui.GetWindowRect"
     ) as mock_rect:
         # Mock window rect to return a standard size
         mock_rect.return_value = (0, 0, 1280, 720)
 
-        controller = BluestacksController(
-            adb_device=mock_adb_controller, image_controller=mock_image_controller
+        controller = PymordialBluestacksDevice(
+            adb_bridge_device=mock_adb_controller,
+            image_controller=mock_image_controller,
         )
         return controller
 
@@ -210,5 +208,4 @@ def mock_app():
 @pytest.fixture
 def mock_screen():
     """Returns a sample PymordialScreen."""
-    return PymordialScreen(name="TestScreen")
     return PymordialScreen(name="TestScreen")
