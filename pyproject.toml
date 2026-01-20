@@ -36,7 +36,6 @@ classifiers = [
 [project.urls]
 homepage = "https://github.com/IAmNo1Special/Pymordial"
 issues = "https://github.com/IAmNo1Special/Pymordial/issues"
-documentation = "https://pymordial.readthedocs.io"
 
 [project.optional-dependencies]
 # Optional OCR engines (choose one based on your needs)
