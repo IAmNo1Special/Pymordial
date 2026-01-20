@@ -29,5 +29,3 @@ class PymordialEmulatorDevice(ABC):
     def close(self):
         """Closes the emulator."""
         pass
-
-    
