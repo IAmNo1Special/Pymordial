@@ -3,26 +3,25 @@
 import logging
 from io import BytesIO
 from time import sleep
-from typing import TYPE_CHECKING
 
 import numpy as np
 from adb_shell.exceptions import TcpTimeoutException
 from PIL import Image
 from pyautogui import ImageNotFoundException, center, locate
+
+from pymordial.controller import PymordialAdbDevice
 from pymordial.core.elements.pymordial_image import PymordialImage
 from pymordial.core.elements.pymordial_pixel import PymordialPixel
 from pymordial.core.pymordial_element import PymordialElement
 from pymordial.utils.config import get_config
 
-if TYPE_CHECKING:
-    from pymordial.controller.pymordial_controller import PymordialController
 logger = logging.getLogger(__name__)
 
 _CONFIG = get_config()
 
 # --- Image Controller Configuration ---
 DEFAULT_FIND_UI_RETRIES = _CONFIG["image_controller"]["default_find_ui_retries"]
-DEFAULT_WAIT_TIME = _CONFIG["bluestacks"]["default_wait_time"]
+DEFAULT_WAIT_TIME = _CONFIG["image_controller"]["default_wait_time"]
 
 
 class ImageController:
@@ -32,9 +31,12 @@ class ImageController:
         text_controller: Helper for checking text in images.
     """
 
-    def __init__(self, PymordialController: "PymordialController"):
+    def __init__(
+        self,
+        adb_bridge_device: PymordialAdbDevice,
+    ):
         """Initializes the ImageController."""
-        self.pymordial_controller = PymordialController
+        self._adb_bridge_device: PymordialAdbDevice = adb_bridge_device
 
     def scale_img_to_screen(
         self,
@@ -107,14 +109,14 @@ class ImageController:
 
         # Capture screen if we don't have an image to check
         if pymordial_screenshot is None:
-            # Ensures PymordialController's ADB is connected
-            if not self.pymordial_controller.adb.is_connected():
-                self.pymordial_controller.adb.connect()
-                if not self.pymordial_controller.adb.is_connected():
-                    raise ValueError("PymordialController's ADB is not connected")
+            # Ensures ADB is connected
+            if not self._adb_bridge_device.is_connected():
+                self._adb_bridge_device.connect()
+                if not self._adb_bridge_device.is_connected():
+                    raise ValueError("ADB is not connected")
 
             try:
-                pymordial_screenshot = self.pymordial_controller.capture_screen()
+                pymordial_screenshot = self._adb_bridge_device.capture_screen()
                 if pymordial_screenshot is None:
                     logger.warning("Failed to capture screen.")
             # except TcpTimeoutException:
@@ -257,14 +259,14 @@ class ImageController:
         while (find_ui_retries < max_tries) if max_tries is not None else True:
             # Capture screen if we don't have an image to check
             if pymordial_screenshot is None:
-                # Ensures PymordialController's ADB is connected
-                if not self.pymordial_controller.adb.is_connected():
-                    self.pymordial_controller.adb.connect()
-                    if not self.pymordial_controller.adb.is_connected():
-                        raise ValueError("PymordialController's ADB is not connected")
+                # Ensures ADB is connected
+                if not self._adb_bridge_device.is_connected():
+                    self._adb_bridge_device.connect()
+                    if not self._adb_bridge_device.is_connected():
+                        raise ValueError("ADB is not connected")
 
                 try:
-                    pymordial_screenshot = self.pymordial_controller.capture_screen()
+                    pymordial_screenshot = self._adb_bridge_device.capture_screen()
                     if pymordial_screenshot is None:
                         logger.warning("Failed to capture screen.")
                 except TcpTimeoutException:
@@ -389,7 +391,3 @@ class ImageController:
             if coord is not None:
                 return coord
         return None
-
-    def __repr__(self) -> str:
-        """Returns a string representation of the ImageController."""
-        return f"ImageController(pymordial_controller={id(self.pymordial_controller)})"
