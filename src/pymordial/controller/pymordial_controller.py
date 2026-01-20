@@ -9,15 +9,15 @@ import numpy as np
 from PIL import Image
 
 from pymordial.controller.adb_device import PymordialAdbDevice
-from pymordial.controller.bluestacks_controller import BluestacksController
+from pymordial.controller.bluestacks_device import PymordialBluestacksDevice
 from pymordial.controller.image_controller import ImageController
 from pymordial.controller.text_controller import TextController
 from pymordial.core.elements.pymordial_image import PymordialImage
 from pymordial.core.elements.pymordial_pixel import PymordialPixel
 from pymordial.core.elements.pymordial_text import PymordialText
 from pymordial.core.pymordial_element import PymordialElement
+from pymordial.core.pymordial_emulator import EmulatorState
 from pymordial.ocr.extract_strategy import PymordialExtractStrategy
-from pymordial.state_machine import EmulatorState
 from pymordial.utils.config import get_config
 
 if TYPE_CHECKING:
@@ -34,7 +34,7 @@ class PymordialController:
     Attributes:
         adb: The PymordialAdbDevice instance.
         image: The ImageController instance.
-        bluestacks: The BluestacksController instance.
+        bluestacks: The PymordialBluestacksDevice instance.
     """
 
     DEFAULT_CLICK_TIMES = _CONFIG["controller"]["default_click_times"]
@@ -56,24 +56,15 @@ class PymordialController:
             apps: Optional list of PymordialApp instances to register.
         """
         self.adb = PymordialAdbDevice(host=adb_host, port=adb_port)
-        self.image = ImageController(self)
+        self.image = ImageController(self.adb)
         self.text = TextController(pymordial_controller=self)
-        self.bluestacks = BluestacksController(self)
+        self.bluestacks = PymordialBluestacksDevice(self.adb, self.image)
         self._apps: dict[str, "PymordialApp"] = {}
         self._streaming_enabled = False  # Track if streaming should be active
 
         if apps:
             for app in apps:
                 self.add_app(app)
-
-    @property
-    def is_streaming(self) -> bool:
-        """Check if streaming is currently active.
-
-        Returns:
-            True if streaming is active, False otherwise.
-        """
-        return self.adb._is_streaming.is_set()
 
     def __getattr__(self, name: str) -> "PymordialApp":
         """Enables dot-notation access to registered apps.
@@ -129,6 +120,21 @@ class PymordialController:
         """
         return list(self._apps.keys())
 
+    @property
+    def apps(self) -> dict[str, "PymordialApp"]:
+        """Returns the dictionary of registered apps."""
+        return self._apps
+
+    def capture_screen(self) -> bytes | None:
+        """Captures the current screen.
+
+        Returns:
+            Screenshot as bytes, or None if failed.
+
+        Convenience method that delegates to adb.capture_screenshot().
+        """
+        return self.adb.capture_screenshot()
+
     def disconnect(self) -> None:
         """Closes the ADB connection and performs cleanup."""
         if self.adb.is_connected():
@@ -148,7 +154,7 @@ class PymordialController:
             True if the click was sent successfully, False otherwise.
         """
         # Ensure Bluestacks is ready before trying to click coords
-        match self.bluestacks.bluestacks_state.current_state:
+        match self.bluestacks.state.current_state:
             case EmulatorState.CLOSED | EmulatorState.LOADING:
                 logger.warning("Cannot click coords - Bluestacks is not ready")
                 return False
@@ -189,7 +195,7 @@ class PymordialController:
             True if the element was found and clicked, False otherwise.
         """
         # Ensure Bluestacks is ready before trying to click ui
-        match self.bluestacks.bluestacks_state.current_state:
+        match self.bluestacks.state.current_state:
             case EmulatorState.CLOSED | EmulatorState.LOADING:
                 logger.warning("Cannot click coords - Bluestacks is not ready")
                 return False
@@ -287,49 +293,6 @@ class PymordialController:
         Convenience method that delegates to adb.swipe().
         """
         return self.adb.swipe(start_x, start_y, end_x, end_y, duration)
-
-    def capture_screen(self) -> "bytes | np.ndarray | None":
-        """Captures the current BlueStacks screen using the appropriate capture strategy.
-
-        Returns:
-            The screenshot as bytes or numpy array, or None if failed.
-        """
-
-        if not self.adb.is_connected():
-            self.adb.connect()
-            if not self.adb.is_connected():
-                logger.warning(
-                    "Cannot capture screen - ADB controller is not initialized"
-                )
-                return None
-
-        # Always use streaming - start if not active
-        if not self.is_streaming:
-            logger.info("Starting stream for capture_screen...")
-            if not self.start_streaming():
-                logger.error("Failed to start stream")
-                return None
-
-        frame = self.adb.get_latest_frame()
-        if frame is not None:
-            # Validate frame isn't corrupted (all same color)
-            if frame.std() < 1.0:  # Nearly uniform = likely corrupted
-                logger.warning(
-                    "Frame appears corrupted (uniform color), restarting stream..."
-                )
-                self.adb.stop_stream()
-                if self.start_streaming():
-                    frame = self.adb.get_latest_frame()
-                    if frame is not None and frame.std() >= 1.0:
-                        logger.debug("Returning fresh frame after restart.")
-                        return frame
-                logger.error("Failed to get valid frame after restart")
-                return None
-            logger.debug("Returning latest frame from stream.")
-            return frame
-
-        logger.warning("Stream active but no frame available.")
-        return None
 
     def find_element(
         self,
@@ -568,32 +531,15 @@ class PymordialController:
 
     # --- Streaming Methods ---
 
-    def start_streaming(
-        self, width: int = 1920, height: int = 1080, bitrate: str = "5M"
-    ) -> bool:
-        """Start video streaming for real-time frame access.
-
-        Blocks until first frame is available or timeout.
-        For real-time botting, streaming provides much lower latency
-        than repeated screenshot capture (16-33ms vs 100-300ms).
-
-        Args:
-            width: Stream width. Default is 1920.
-            height: Stream height. Default is 1080.
-            bitrate: Stream bitrate (e.g., "5M" for 5 Mbps). Default is "5M".
+    def start_streaming(self) -> bool:
+        """Starts the screen stream using ADB controller.
 
         Returns:
             True if streaming started successfully, False otherwise.
 
         Convenience method that delegates to adb.start_stream().
-
-        Example:
-            >>> if controller.start_streaming():
-            ...     frame = controller.get_frame()
-            ...     # Process frame for real-time bot logic
-            ...     text = controller.read_text(frame)
         """
-        result = self.adb.start_stream(width, height, bitrate)
+        result = self.adb.start_stream()
         if result:
             self._streaming_enabled = True
         return result
@@ -626,7 +572,7 @@ class PymordialController:
         """Returns a string representation of the PymordialController."""
         return (
             f"PymordialController("
-            f"apps={len(self.apps)}, "
+            f"apps={len(self._apps)}, "
             f"adb_connected={self.adb.is_connected()}, "
-            f"bluestacks={self.bluestacks.bluestacks_state.current_state.name})"
+            f"bluestacks={self.bluestacks.state.current_state.name})"
         )

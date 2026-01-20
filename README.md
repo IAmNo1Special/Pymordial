@@ -133,7 +133,7 @@ if controller.my_game.is_open():
 ```
 PymordialController
 ├── adb        (PymordialAdbDevice)      - Shell commands, streaming, tap/swipe
-├── bluestacks (BluestacksController) - Open/close emulator, window management
+├── bluestacks (PymordialBluestacksDevice) - Open/close emulator, window management
 ├── image      (ImageController)    - Template matching, pixel detection
 └── text       (TextController)     - OCR via Tesseract
 ```

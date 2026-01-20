@@ -17,7 +17,9 @@ class TestConvenienceMethods:
             patch("pymordial.controller.pymordial_controller.PymordialAdbDevice"),
             patch("pymordial.controller.pymordial_controller.ImageController"),
             patch("pymordial.controller.pymordial_controller.TextController"),
-            patch("pymordial.controller.pymordial_controller.BluestacksController"),
+            patch(
+                "pymordial.controller.pymordial_controller.PymordialBluestacksDevice"
+            ),
         ):
             controller = PymordialController()
             # Mock the sub-controllers

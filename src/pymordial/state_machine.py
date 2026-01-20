@@ -5,27 +5,6 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 
 
-class EmulatorState(Enum):
-    """Enumeration of emulator states."""
-
-    CLOSED = auto()
-    LOADING = auto()
-    READY = auto()
-
-    @classmethod
-    def get_transitions(cls) -> dict[Enum, list[Enum]]:
-        """Define valid state transitions for the emulator state machine.
-
-        Returns:
-            A dictionary mapping current states to their allowed next states.
-        """
-        return {
-            cls.CLOSED: [cls.LOADING],
-            cls.LOADING: [cls.CLOSED, cls.READY],
-            cls.READY: [cls.CLOSED, cls.LOADING],
-        }
-
-
 class AppState(Enum):
     """Enumeration of application lifecycle states."""
 

@@ -4,11 +4,11 @@ This package exposes the main controller, app, and element classes for
 automating BlueStacks interactions.
 """
 
+from pymordial.assets import BluestacksElements
 from pymordial.controller import (
-    BluestacksController,
-    BluestacksElements,
     ImageController,
     PymordialAdbDevice,
+    PymordialBluestacksDevice,
     PymordialController,
     TextController,
 )
@@ -16,6 +16,7 @@ from pymordial.core import PymordialApp, PymordialElement, PymordialScreen
 from pymordial.core.elements.pymordial_image import PymordialImage
 from pymordial.core.elements.pymordial_pixel import PymordialPixel
 from pymordial.core.elements.pymordial_text import PymordialText
+from pymordial.core.pymordial_emulator import EmulatorState
 from pymordial.exceptions import (
     PymordialAppError,
     PymordialConnectionError,
@@ -24,7 +25,7 @@ from pymordial.exceptions import (
     PymordialStateError,
     PymordialTimeoutError,
 )
-from pymordial.state_machine import AppState, EmulatorState, StateMachine
+from pymordial.state_machine import AppState, StateMachine
 
 __all__ = [
     "PymordialAdbDevice",
@@ -42,7 +43,7 @@ __all__ = [
     "PymordialStateError",
     "PymordialText",
     "PymordialTimeoutError",
-    "BluestacksController",
+    "PymordialBluestacksDevice",
     "BluestacksElements",
     "EmulatorState",
     "ImageController",

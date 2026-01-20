@@ -3,7 +3,7 @@
 import pytest
 
 from pymordial.controller.adb_device import PymordialAdbDevice
-from pymordial.controller.bluestacks_controller import BluestacksController
+from pymordial.controller.bluestacks_device import PymordialBluestacksDevice
 from pymordial.controller.image_controller import ImageController
 from pymordial.controller.pymordial_controller import PymordialController
 
@@ -25,7 +25,7 @@ def real_image_controller(real_pymordial_controller):
 
 @pytest.fixture(scope="session")
 def real_bluestacks_controller(real_pymordial_controller):
-    """Returns a real BluestacksController with BlueStacks already open."""
+    """Returns a real PymordialBluestacksDevice with BlueStacks already open."""
     return real_pymordial_controller.bluestacks
 
 
