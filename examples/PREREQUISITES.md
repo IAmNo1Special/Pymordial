@@ -112,11 +112,4 @@ uv run examples/05_custom_app_screens.py
 
 ---
 
-## Next Steps
-
-After running examples:
-- Read [QUICKSTART.md](../docs/QUICKSTART.md)
-- Check [API_REFERENCE.md](../docs/API_REFERENCE.md)
-- Review [pymordial_knowledge.md](../docs/pymordial_knowledge.md)
-
 Happy automating! 🤖

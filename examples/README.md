@@ -74,8 +74,6 @@ Learn how to:
 uv run examples/04_ocr_reading.py
 ```
 
-**Requires**: Tesseract OCR installed (see `TESSERACT_INSTALL.md`)
-
 ---
 
 ### [05_custom_app_screens.py](05_custom_app_screens.py)
