@@ -16,7 +16,6 @@ dependencies = [
     "psutil>=7.0.0",
     "pyautogui>=0.9.54",
     "pytesseract>=0.3.13",
-    "pywin32>=310",
     "pyyaml>=6.0.2",
     "tqdm>=4.67.1",
 ]
