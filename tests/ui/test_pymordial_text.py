@@ -2,8 +2,8 @@
 
 import pytest
 
-from pymordial.core.elements.pymordial_text import PymordialText
-from pymordial.ocr.extract_strategy import DefaultExtractStrategy
+from pymordial.devices.extract_strategies import DefaultExtractStrategy
+from pymordial.ui.text import PymordialText
 
 
 def test_pymordial_text_init(mock_config):

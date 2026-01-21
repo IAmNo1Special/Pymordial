@@ -1,40 +1,42 @@
-"""Tests for ImageController."""
+"""Tests for PymordialUiDevice (Image functions)."""
 
 from unittest.mock import Mock, patch
 
 import pytest
 from PIL import Image
 
-from pymordial.controller.image_controller import ImageController
-from pymordial.core.elements.pymordial_image import PymordialImage
-from pymordial.core.elements.pymordial_pixel import PymordialPixel
+from pymordial.devices.ui_device import PymordialUiDevice
+from pymordial.ui.image import PymordialImage
+from pymordial.ui.pixel import PymordialPixel
 
 
 @pytest.fixture
 def mock_adb_device():
     """Create a mock PymordialAdbDevice."""
     adb = Mock()
+    # Mock is_connected to return True by default so checks pass
+    adb.is_connected.return_value = True
     adb.capture_screen.return_value = b"fake_screenshot"
     return adb
 
 
-def test_image_controller_init(mock_config, mock_adb_device):
-    """Test ImageController initialization."""
-    controller = ImageController(mock_adb_device)
-    assert controller._adb_bridge_device == mock_adb_device
+def test_ui_device_init(mock_config, mock_adb_device):
+    """Test PymordialUiDevice initialization."""
+    device = PymordialUiDevice(bridge_device=mock_adb_device)
+    assert device._bridge_device == mock_adb_device
 
 
 def test_scale_img_to_screen(mock_config, mock_adb_device):
     """Test image scaling to screen."""
-    controller = ImageController(mock_adb_device)
+    device = PymordialUiDevice(bridge_device=mock_adb_device)
     mock_screen = Image.new("RGB", (1280, 720))
     mock_template = Image.new("RGB", (100, 100))
 
     with patch(
-        "pymordial.controller.image_controller.Image.open",
+        "pymordial.devices.ui_device.Image.open",
         return_value=mock_template,
     ):
-        result = controller.scale_img_to_screen(
+        result = device.scale_img_to_screen(
             image_path="template.png",
             screen_image=mock_screen,
             bluestacks_resolution=(1280, 720),
@@ -44,7 +46,7 @@ def test_scale_img_to_screen(mock_config, mock_adb_device):
 
 def test_check_pixel_color_exact_match(mock_config, mock_adb_device):
     """Test pixel color checking with exact match."""
-    controller = ImageController(mock_adb_device)
+    device = PymordialUiDevice(bridge_device=mock_adb_device)
 
     pixel = PymordialPixel(
         label="test_pixel",
@@ -55,10 +57,9 @@ def test_check_pixel_color_exact_match(mock_config, mock_adb_device):
 
     test_image = Image.new("RGB", (100, 100), color=(255, 0, 0))
 
-    with patch(
-        "pymordial.controller.image_controller.Image.open", return_value=test_image
-    ):
-        result = controller.check_pixel_color(
+    # We mock Image.open to return our test_image when called with BytesIO
+    with patch("pymordial.devices.ui_device.Image.open", return_value=test_image):
+        result = device.check_pixel_color(
             pymordial_pixel=pixel,
             pymordial_screenshot=b"fake_bytes",
         )
@@ -67,7 +68,7 @@ def test_check_pixel_color_exact_match(mock_config, mock_adb_device):
 
 def test_check_pixel_color_no_match(mock_config, mock_adb_device):
     """Test pixel color checking with no match."""
-    controller = ImageController(mock_adb_device)
+    device = PymordialUiDevice(bridge_device=mock_adb_device)
 
     pixel = PymordialPixel(
         label="test_pixel",
@@ -78,10 +79,8 @@ def test_check_pixel_color_no_match(mock_config, mock_adb_device):
 
     test_image = Image.new("RGB", (100, 100), color=(255, 0, 0))  # Red
 
-    with patch(
-        "pymordial.controller.image_controller.Image.open", return_value=test_image
-    ):
-        result = controller.check_pixel_color(
+    with patch("pymordial.devices.ui_device.Image.open", return_value=test_image):
+        result = device.check_pixel_color(
             pymordial_pixel=pixel,
             pymordial_screenshot=b"fake_bytes",
         )
@@ -90,7 +89,7 @@ def test_check_pixel_color_no_match(mock_config, mock_adb_device):
 
 def test_check_pixel_color_with_tolerance(mock_config, mock_adb_device):
     """Test pixel color checking with tolerance."""
-    controller = ImageController(mock_adb_device)
+    device = PymordialUiDevice(bridge_device=mock_adb_device)
 
     pixel = PymordialPixel(
         label="test_pixel",
@@ -101,10 +100,8 @@ def test_check_pixel_color_with_tolerance(mock_config, mock_adb_device):
 
     test_image = Image.new("RGB", (100, 100), color=(255, 0, 0))
 
-    with patch(
-        "pymordial.controller.image_controller.Image.open", return_value=test_image
-    ):
-        result = controller.check_pixel_color(
+    with patch("pymordial.devices.ui_device.Image.open", return_value=test_image):
+        result = device.check_pixel_color(
             pymordial_pixel=pixel,
             pymordial_screenshot=b"fake_bytes",
         )
@@ -113,7 +110,7 @@ def test_check_pixel_color_with_tolerance(mock_config, mock_adb_device):
 
 def test_where_element_not_found(mock_config, mock_adb_device):
     """Test where_element when element not found."""
-    controller = ImageController(mock_adb_device)
+    device = PymordialUiDevice(bridge_device=mock_adb_device)
 
     image_elem = PymordialImage(
         label="test",
@@ -127,12 +124,14 @@ def test_where_element_not_found(mock_config, mock_adb_device):
     mock_template = Image.new("RGB", (100, 100), color=(255, 255, 255))
 
     with patch(
-        "pymordial.controller.image_controller.Image.open",
+        "pymordial.devices.ui_device.Image.open",
         return_value=mock_template,
     ):
-        with patch("pymordial.controller.image_controller.locate", return_value=None):
-            result = controller.where_element(
+        # We need to mock 'locate' to return None
+        with patch("pymordial.devices.ui_device.locate", return_value=None):
+            result = device.where_element(
                 pymordial_element=image_elem,
                 pymordial_screenshot=mock_screen,
+                max_tries=1,  # Important to avoid infinite loop if max_tries defaults to None/infinite
             )
             assert result is None

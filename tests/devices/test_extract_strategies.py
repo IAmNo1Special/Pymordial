@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from pymordial.ocr.extract_strategy import (
+from pymordial.devices.extract_strategies import (
     DefaultExtractStrategy,
     RevomonTextStrategy,
 )

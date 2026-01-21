@@ -5,8 +5,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from pymordial.state_machine import AppState, StateMachine
-from pymordial.core import EmulatorState
+from pymordial.core.blueprints.emulator_device import EmulatorState
+from pymordial.core.state_machine import AppState, StateMachine
 
 
 class StateForTesting(Enum):

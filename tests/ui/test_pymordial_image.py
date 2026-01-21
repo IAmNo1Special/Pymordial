@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from pymordial.core.elements.pymordial_image import PymordialImage
+from pymordial.ui.image import PymordialImage
 
 
 def test_pymordial_image_init(mock_config):

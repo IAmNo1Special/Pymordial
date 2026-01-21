@@ -2,7 +2,7 @@
 
 import pytest
 
-from pymordial.core.elements.pymordial_pixel import PymordialPixel
+from pymordial.ui.pixel import PymordialPixel
 
 
 def test_pymordial_pixel_init(mock_config):

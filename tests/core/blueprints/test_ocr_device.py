@@ -1,9 +1,9 @@
 """Tests for OCR base class."""
 
-from pymordial.ocr.base import PymordialOCR
+from pymordial.core.blueprints.ocr_device import PymordialOCRDevice
 
 
-class ConcreteOCR(PymordialOCR):
+class ConcreteOCR(PymordialOCRDevice):
     """Concrete implementation for testing."""
 
     def extract_text(self, image):

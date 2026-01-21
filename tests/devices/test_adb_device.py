@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from pymordial.controller.adb_device import PymordialAdbDevice
+from pymordial.devices.adb_device import PymordialAdbDevice
 
 
 def test_adb_controller_init_default_params(mock_config):
@@ -36,7 +36,7 @@ def test_connect_success(mock_config, mock_adb_device):
 
 def test_connect_failure(mock_config):
     """Test ADB connection failure."""
-    with patch("pymordial.controller.adb_device.AdbDeviceTcp") as mock_device_class:
+    with patch("pymordial.devices.adb_device.AdbDeviceTcp") as mock_device_class:
         mock_instance = mock_device_class.return_value
         mock_instance.connect.side_effect = Exception("Connection failed")
         mock_instance.available = False
