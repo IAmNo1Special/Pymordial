@@ -73,11 +73,11 @@ def test_open_without_controller(mock_config):
 
 def test_open_with_controller(mock_config, mock_adb_controller):
     """Test opening app with controller."""
-    from pymordial.core.controller import PymordialController
+    from pymordial.core.bluestacks_controller import PymordialBluestacksController
 
     app = PymordialApp(app_name="TestApp", package_name="com.test.app")
 
-    controller = Mock(spec=PymordialController)
+    controller = Mock(spec=PymordialBluestacksController)
     controller.adb = mock_adb_controller
     app.pymordial_controller = controller
 
@@ -97,11 +97,11 @@ def test_close_without_controller(mock_config):
 
 def test_close_with_controller(mock_config, mock_adb_controller):
     """Test closing app with controller."""
-    from pymordial.core.controller import PymordialController
+    from pymordial.core.bluestacks_controller import PymordialBluestacksController
 
     app = PymordialApp(app_name="TestApp", package_name="com.test.app")
 
-    controller = Mock(spec=PymordialController)
+    controller = Mock(spec=PymordialBluestacksController)
     controller.adb = mock_adb_controller
     app.pymordial_controller = controller
 
