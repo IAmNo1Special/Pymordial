@@ -70,10 +70,6 @@ extract_strategy:
       single_line: "7"
       block: "6"
 
-# --- EasyOCR Settings ---
-easyocr:
-  default_languages: ["en"]
-
 # --- Controller Settings ---
 controller:
   default_click_times: 1

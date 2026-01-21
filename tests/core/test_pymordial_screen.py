@@ -1,7 +1,7 @@
 """Tests for PymordialScreen."""
 
-from pymordial.core.elements.pymordial_image import PymordialImage
-from pymordial.core.pymordial_screen import PymordialScreen
+from pymordial.core.screen import PymordialScreen
+from pymordial.ui.image import PymordialImage
 
 
 def test_pymordial_screen_init(mock_config):

@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from pymordial.controller.pymordial_controller import PymordialController
+from pymordial.core.controller import PymordialController
 
 
 @pytest.mark.integration

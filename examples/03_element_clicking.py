@@ -11,11 +11,11 @@ This script demonstrates how to:
 from logging import INFO, basicConfig, getLogger
 from pathlib import Path
 
-from pymordial.controller.pymordial_controller import PymordialController
-from pymordial.core.elements.pymordial_image import PymordialImage
-from pymordial.core.elements.pymordial_pixel import PymordialPixel
-from pymordial.core.elements.pymordial_text import PymordialText
-from pymordial.core.pymordial_app import PymordialApp
+from pymordial.ui.image import PymordialImage
+from pymordial.ui.pixel import PymordialPixel
+from pymordial.ui.text import PymordialText
+from pymordial.core.app import PymordialApp
+from pymordial.core.controller import PymordialController
 
 logger = getLogger(__name__)
 
@@ -43,7 +43,7 @@ def main():
     store_button: PymordialImage = PymordialImage(
         label="store_button",
         og_resolution=(1920, 1080),
-        filepath=Path(r"F:\Pymordial\src\pymordial\assets\bluestacks_store_button.png"),
+        filepath=Path(r"F:\Pymordial\examples\assets\bluestacks_store_button.png"),
         confidence=0.6,
     )
     logger.info(f"   Created: {store_button}\n")
@@ -109,13 +109,6 @@ def main():
         logger.error(f"   Error: {e}\n")
 
     logger.info("✓ Example completed!\n")
-    logger.info("Tips:")
-    logger.info("  • Capture your own element images using Screenshot tools")
-    logger.info("  • Adjust confidence (0.0-1.0) for matching sensitivity")
-    logger.info("  • Use pixel elements for fast color-based detection")
-    logger.info("  • Text elements require OCR (Tesseract or EasyOCR)")
-    logger.info("  • Define ready_element for automatic LOADING→READY transition")
-
 
 if __name__ == "__main__":
     main()

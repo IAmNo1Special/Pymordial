@@ -10,8 +10,8 @@ This script demonstrates how to:
 import time
 from logging import INFO, basicConfig, getLogger
 
-from pymordial.controller.pymordial_controller import PymordialController
-from pymordial.core.pymordial_app import PymordialApp
+from pymordial.core.app import PymordialApp
+from pymordial.core.controller import PymordialController
 
 logger = getLogger(__name__)
 

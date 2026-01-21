@@ -1,6 +1,6 @@
 [project]
 name = "pymordial"
-version = "0.3.0"
+version = "0.3.1"
 description = "A Python library designed to control BlueStacks through ADB commands, enabling seamless automation and management of Android applications on a PC."
 readme = "README.md"
 authors = [
@@ -10,7 +10,6 @@ requires-python = ">=3.13"
 dependencies = [
     "adb-shell>=0.4.4",
     "av>=16.0.1",
-    "easyocr>=1.7.2",
     "numpy>=2.2.5",
     "opencv-python-headless>=4.12.0.88",
     "pillow>=11.1.0",
@@ -36,10 +35,6 @@ classifiers = [
 [project.urls]
 homepage = "https://github.com/IAmNo1Special/Pymordial"
 issues = "https://github.com/IAmNo1Special/Pymordial/issues"
-
-[project.optional-dependencies]
-# Optional OCR engines (choose one based on your needs)
-easyocr = ["easyocr>=1.7.2"]
 
 [build-system]
 requires = ["uv_build>=0.8.8,<0.9.0"]
