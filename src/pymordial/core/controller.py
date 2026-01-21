@@ -20,7 +20,7 @@ from pymordial.ui.text import PymordialText
 from pymordial.utils.config import get_config
 
 if TYPE_CHECKING:
-    from pymordial.core.pymordial_app import PymordialApp
+    from pymordial.core.app import PymordialApp
 
 logger = logging.getLogger(__name__)
 

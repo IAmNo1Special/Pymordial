@@ -11,11 +11,11 @@ This script demonstrates how to:
 from logging import INFO, basicConfig, getLogger
 from pathlib import Path
 
+from pymordial.core.app import PymordialApp
+from pymordial.core.controller import PymordialController
 from pymordial.ui.image import PymordialImage
 from pymordial.ui.pixel import PymordialPixel
 from pymordial.ui.text import PymordialText
-from pymordial.core.app import PymordialApp
-from pymordial.core.controller import PymordialController
 
 logger = getLogger(__name__)
 
@@ -43,7 +43,7 @@ def main():
     store_button: PymordialImage = PymordialImage(
         label="store_button",
         og_resolution=(1920, 1080),
-        filepath=Path(r"F:\Pymordial\examples\assets\bluestacks_store_button.png"),
+        filepath=Path(__file__).parent / "assets/bluestacks_store_button.png",
         confidence=0.6,
     )
     logger.info(f"   Created: {store_button}\n")
@@ -109,6 +109,7 @@ def main():
         logger.error(f"   Error: {e}\n")
 
     logger.info("✓ Example completed!\n")
+
 
 if __name__ == "__main__":
     main()

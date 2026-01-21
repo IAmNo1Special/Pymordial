@@ -88,7 +88,7 @@ extract_strategy:
   tesseract:
     base_config: "--oem 3"
     default_config: "--oem 3 --psm 6"
-    tesseract_cmd: "F:\\Pymordial\\src\\pymordial\\bin\\tesseract.exe"
+    tesseract_cmd: "tesseract"
     preprocess:
       upscale_factor: 2
       denoise_strength: 10
