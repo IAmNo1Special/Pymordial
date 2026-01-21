@@ -10,7 +10,7 @@ This script demonstrates how to:
 
 from logging import INFO, basicConfig, getLogger
 
-from pymordial.core.controller import PymordialController
+from pymordial.core.bluestacks_controller import PymordialBluestacksController
 from pymordial.devices.extract_strategies import (
     DefaultExtractStrategy,
     RevomonTextStrategy,
@@ -25,8 +25,8 @@ def main():
     logger.info("=== Pymordial OCR Reading Example ===\n")
 
     # Create controller
-    logger.info("1. Creating PymordialController...")
-    controller = PymordialController()
+    logger.info("1. Creating PymordialBluestacksController...")
+    controller = PymordialBluestacksController()
 
     if not controller.bluestacks.is_ready():
         controller.bluestacks.open()

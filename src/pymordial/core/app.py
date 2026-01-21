@@ -9,7 +9,7 @@ from pymordial.utils.config import get_config
 
 if TYPE_CHECKING:
     from pymordial.core.blueprints.element import PymordialElement
-    from pymordial.core.controller import PymordialController
+    from pymordial.core.bluestacks_controller import PymordialBluestacksController
     from pymordial.core.screen import PymordialScreen
 
 
@@ -25,8 +25,8 @@ APP_CLOSE_WAIT_TIME = _CONFIG["app"]["close_wait_time"]
 class PymordialApp:
     """Represents an Android application with lifecycle management.
 
-    The PymordialController reference is automatically set when this app
-    is registered with a controller via PymordialController(apps=[...]) or
+    The PymordialBluestacksController reference is automatically set when this app
+    is registered with a controller via PymordialBluestacksController(apps=[...]) or
     controller.add_app(...).
 
     Attributes:
@@ -67,7 +67,7 @@ class PymordialApp:
 
         self.app_name: str = app_name
         self.package_name: str = package_name
-        self.pymordial_controller: PymordialController | None = None
+        self.pymordial_controller: PymordialBluestacksController | None = None
         self.screens: dict[str, PymordialScreen] = (
             screens if screens is not None else {}
         )

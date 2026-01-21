@@ -10,7 +10,7 @@ from pymordial.core.blueprints.emulator_device import (
     PymordialEmulatorDevice,
 )
 from pymordial.core.blueprints.vision_device import PymordialVisionDevice
-from pymordial.core.controller import PymordialController
+from pymordial.core.bluestacks_controller import PymordialBluestacksController
 from pymordial.core.screen import PymordialScreen
 from pymordial.core.state_machine import AppState, StateMachine
 from pymordial.ui.image import PymordialImage
@@ -29,6 +29,6 @@ __all__ = [
     "PymordialBridgeDevice",
     "AppState",
     "StateMachine",
-    "PymordialController",
+    "PymordialBluestacksController",
     "PymordialVisionDevice",
 ]

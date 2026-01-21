@@ -27,8 +27,10 @@ logger = logging.getLogger(__name__)
 _CONFIG = get_config()
 
 
-class PymordialController:
+class PymordialBluestacksController:
     """Main controller that orchestrates ADB, BlueStacks, and Image controllers.
+
+    This specific implementation is tailored for BlueStacks automation.
 
     Attributes:
         adb: The PymordialAdbDevice instance.
@@ -47,7 +49,7 @@ class PymordialController:
         adb_port: int | None = None,
         apps: list["PymordialApp"] | None = None,
     ):
-        """Initializes the PymordialController.
+        """Initializes the PymordialBluestacksController.
 
         Args:
             adb_host: Optional ADB host address.
@@ -163,7 +165,7 @@ class PymordialController:
                         "ADB device not connected. Skipping 'click_coords' method call."
                     )
                     return False
-                single_tap = PymordialController.CMD_TAP.format(
+                single_tap = PymordialBluestacksController.CMD_TAP.format(
                     x=coords[0], y=coords[1]
                 )
                 tap_command = " && ".join([single_tap] * times)
@@ -221,7 +223,7 @@ class PymordialController:
                 return False
             case _:
                 logger.warning(
-                    "Cannot click coords - PymordialController.bluestacks_state.current_state is not in a valid state."
+                    "Cannot click coords - PymordialBluestacksController.bluestacks_state.current_state is not in a valid state."
                     " Make sure it is in the 'EmulatorState.READY' state."
                 )
                 return False
@@ -363,7 +365,8 @@ class PymordialController:
                 self.find_element(
                     pymordial_element=pymordial_element,
                     pymordial_screenshot=pymordial_screenshot,
-                    max_tries=max_tries or PymordialController.DEFAULT_MAX_TRIES,
+                    max_tries=max_tries
+                    or PymordialBluestacksController.DEFAULT_MAX_TRIES,
                 )
                 is not None
             )
@@ -402,7 +405,8 @@ class PymordialController:
                 self.find_element(
                     pymordial_element=pymordial_element,
                     pymordial_screenshot=pymordial_screenshot,
-                    max_tries=max_tries or PymordialController.DEFAULT_MAX_TRIES,
+                    max_tries=max_tries
+                    or PymordialBluestacksController.DEFAULT_MAX_TRIES,
                 )
                 is not None
             )
@@ -567,9 +571,9 @@ class PymordialController:
         return self.adb.stop_stream()
 
     def __repr__(self) -> str:
-        """Returns a string representation of the PymordialController."""
+        """Returns a string representation of the PymordialBluestacksController."""
         return (
-            f"PymordialController("
+            f"PymordialBluestacksController("
             f"apps={len(self._apps)}, "
             f"adb_connected={self.adb.is_connected()}, "
             f"bluestacks={self.bluestacks.state.current_state.name})"

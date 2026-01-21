@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `core/element.py` → `core/blueprints/element.py`
     - `ocr/extract_strategies.py` → `devices/extract_strategies.py`
     - `utils/state_machine.py` → `core/state_machine.py`
-- **Controller API**: `PymordialController` now delegates all UI logic to `self.ui` (`PymordialUiDevice`).
+- **Controller API**: `PymordialBluestacksController` now delegates all UI logic to `self.ui` (`PymordialUiDevice`).
 - **Dependencies**: Removed hard dependency on `easyocr`.
 
 ### Removed

@@ -6,7 +6,7 @@ import pytest
 from PIL import Image
 
 from pymordial.core.app import PymordialApp
-from pymordial.core.controller import PymordialController
+from pymordial.core.bluestacks_controller import PymordialBluestacksController
 from pymordial.core.screen import PymordialScreen
 from pymordial.devices.adb_device import PymordialAdbDevice
 from pymordial.devices.bluestacks_device import PymordialBluestacksDevice
@@ -156,7 +156,7 @@ def mock_config():
             create=True,
         ),
         patch(
-            "pymordial.core.controller.get_config",
+            "pymordial.core.bluestacks_controller.get_config",
             return_value=config,
             create=True,
         ),
