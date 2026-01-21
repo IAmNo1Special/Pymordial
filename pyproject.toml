@@ -51,3 +51,8 @@ markers = [
     "integration: marks tests as integration tests (requires running BlueStacks and ADB)",
 ]
 
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
