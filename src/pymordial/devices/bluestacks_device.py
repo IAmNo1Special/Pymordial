@@ -8,10 +8,8 @@ from logging import DEBUG, basicConfig, getLogger
 import psutil
 
 from pymordial.core.app import PymordialApp
-from pymordial.core.blueprints.emulator_device import (
-    EmulatorState,
-    PymordialEmulatorDevice,
-)
+from pymordial.core.blueprints.emulator_device import (EmulatorState,
+                                                       PymordialEmulatorDevice)
 from pymordial.core.blueprints.vision_device import PymordialVisionDevice
 from pymordial.devices.adb_device import PymordialAdbDevice
 from pymordial.utils import log_property_setter, validate_and_convert_int

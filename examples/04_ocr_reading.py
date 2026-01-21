@@ -11,10 +11,8 @@ This script demonstrates how to:
 from logging import INFO, basicConfig, getLogger
 
 from pymordial.core.controller import PymordialController
-from pymordial.devices.extract_strategies import (
-    DefaultExtractStrategy,
-    RevomonTextStrategy,
-)
+from pymordial.devices.extract_strategies import (DefaultExtractStrategy,
+                                                  RevomonTextStrategy)
 
 logger = getLogger(__name__)
 

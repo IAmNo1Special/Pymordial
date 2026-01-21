@@ -2,10 +2,8 @@
 
 import numpy as np
 
-from pymordial.devices.extract_strategies import (
-    DefaultExtractStrategy,
-    RevomonTextStrategy,
-)
+from pymordial.devices.extract_strategies import (DefaultExtractStrategy,
+                                                  RevomonTextStrategy)
 
 
 def test_default_extract_strategy_preprocess(mock_config):
