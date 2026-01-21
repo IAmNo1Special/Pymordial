@@ -108,11 +108,12 @@ Define the elements you want to interact with using `PymordialImage`, `Pymordial
 
 ```python
 from pymordial import PymordialImage, PymordialPixel, PymordialText
+from pathlib import Path
 
 # Image Element (Template Matching)
 start_button = PymordialImage(
     label="start_button",
-    filepath="assets/start_btn.png",
+    filepath=Path(__file__).parent / "assets/start_btn.png",
     confidence=0.8,
     og_resolution=(1920, 1080),  # Resolution where asset was captured
 )
