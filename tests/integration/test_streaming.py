@@ -4,12 +4,12 @@ import time
 
 import pytest
 
-from pymordial.core.bluestacks_controller import PymordialBluestacksController
+from pymordial.core.controller import PymordialController
 
 
 @pytest.mark.integration
 def test_streaming_basic_functionality(
-    real_pymordial_controller: PymordialBluestacksController,
+    real_pymordial_controller: PymordialController,
 ):
     """Test basic streaming: start, get frames, stop."""
     # Start streaming
@@ -48,7 +48,7 @@ def test_streaming_basic_functionality(
 
 @pytest.mark.integration
 def test_streaming_performance(
-    real_pymordial_controller: PymordialBluestacksController,
+    real_pymordial_controller: PymordialController,
 ):
     """Test that streaming returns consistent frames rapidly.
 

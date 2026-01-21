@@ -12,7 +12,7 @@ from logging import INFO, basicConfig, getLogger
 from pathlib import Path
 
 from pymordial.core.app import PymordialApp
-from pymordial.core.bluestacks_controller import PymordialBluestacksController
+from pymordial.core.controller import PymordialController
 from pymordial.ui.image import PymordialImage
 from pymordial.ui.pixel import PymordialPixel
 from pymordial.ui.text import PymordialText
@@ -27,8 +27,8 @@ def main():
 
     try:
         # Create controller
-        logger.info("1. Creating PymordialBluestacksController...")
-        controller = PymordialBluestacksController()
+        logger.info("1. Creating PymordialController...")
+        controller = PymordialController()
 
         if not controller.bluestacks.is_ready():
             logger.info("   Opening BlueStacks...")

@@ -2,7 +2,7 @@
 
 import pytest
 
-from pymordial.core.bluestacks_controller import PymordialBluestacksController
+from pymordial.core.controller import PymordialController
 from pymordial.devices.adb_device import PymordialAdbDevice
 
 
@@ -22,15 +22,15 @@ def real_ui_device(real_pymordial_controller):
 
 
 @pytest.fixture(scope="session")
-def real_bluestacks_controller(real_pymordial_controller):
+def real_bluestacks_device(real_pymordial_controller):
     """Returns a real PymordialBluestacksDevice with BlueStacks already open."""
     return real_pymordial_controller.bluestacks
 
 
 @pytest.fixture(scope="session")
 def real_pymordial_controller():
-    """Returns a real PymordialBluestacksController."""
-    controller = PymordialBluestacksController()
+    """Returns a real PymordialController."""
+    controller = PymordialController()
     try:
         controller.bluestacks.open()
     except Exception as e:

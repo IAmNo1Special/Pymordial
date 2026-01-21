@@ -5,6 +5,7 @@ from io import BytesIO
 from logging import DEBUG, basicConfig, getLogger
 from pathlib import Path
 from time import sleep
+from typing import TYPE_CHECKING
 
 import cv2
 import numpy as np
@@ -22,6 +23,9 @@ from pymordial.ui.image import PymordialImage
 from pymordial.ui.pixel import PymordialPixel
 from pymordial.utils.config import VisionConfig, get_config
 
+if TYPE_CHECKING:
+    from pymordial.utils.config import PymordialConfig
+
 
 class PymordialUiDevice(PymordialVisionDevice):
     """Handles all visual recognition tasks.
@@ -36,6 +40,9 @@ class PymordialUiDevice(PymordialVisionDevice):
         config: Configuration dictionary for vision settings (timeouts, retries).
         ocr_engine: The backend engine used for text extraction (e.g., Tesseract).
     """
+
+    name: str = "ui"
+    version: str = "0.1.0"
 
     def __init__(
         self,
@@ -61,6 +68,27 @@ class PymordialUiDevice(PymordialVisionDevice):
         self.config: VisionConfig = copy.deepcopy(
             config or get_config()["image_controller"]
         )
+
+    def initialize(self, config: "PymordialConfig") -> None:
+        """Initializes the UI device plugin with configuration.
+
+        Args:
+            config: Global Pymordial configuration dictionary.
+        """
+        # TODO: Use config to set OCR strategy/timeouts if provided
+        pass
+
+    def set_bridge_device(self, bridge_device: PymordialBridgeDevice) -> None:
+        """Sets the bridge device (dependency injection).
+
+        Args:
+             bridge_device: The bridge device instance to use.
+        """
+        self._bridge_device = bridge_device
+
+    def shutdown(self) -> None:
+        """Cleans up resources."""
+        pass
 
     def scale_img_to_screen(
         self,

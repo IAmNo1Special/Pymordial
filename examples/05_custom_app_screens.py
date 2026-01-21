@@ -11,7 +11,7 @@ from logging import INFO, basicConfig, getLogger
 from pathlib import Path
 
 from pymordial.core.app import PymordialApp
-from pymordial.core.bluestacks_controller import PymordialBluestacksController
+from pymordial.core.controller import PymordialController
 from pymordial.core.screen import PymordialScreen
 from pymordial.ui.image import PymordialImage
 from pymordial.ui.text import PymordialText
@@ -25,8 +25,8 @@ def main():
     logger.info("=== Pymordial Custom App Structure Example ===\n")
 
     # Create controller
-    logger.info("1. Creating PymordialBluestacksController...")
-    controller = PymordialBluestacksController()
+    logger.info("1. Creating PymordialController...")
+    controller = PymordialController()
     logger.info("   ✓ Controller created\n")
 
     # Define your custom app

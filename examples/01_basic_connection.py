@@ -1,7 +1,7 @@
 """Basic BlueStacks connection example.
 
 This script demonstrates how to:
-1. Create a PymordialBluestacksController
+1. Create a PymordialController
 2. Connect to BlueStacks via ADB
 3. Execute shell commands
 4. Disconnect cleanly
@@ -9,7 +9,7 @@ This script demonstrates how to:
 
 from logging import INFO, basicConfig, getLogger
 
-from pymordial.core.bluestacks_controller import PymordialBluestacksController
+from pymordial.core.controller import PymordialController
 
 logger = getLogger(__name__)
 
@@ -20,8 +20,8 @@ def main():
     logger.info("=== Pymordial Basic Connection Example ===\n")
 
     # Create controller - BlueStacks must be running
-    logger.info("1. Creating PymordialBluestacksController...")
-    controller = PymordialBluestacksController()
+    logger.info("1. Creating PymordialController...")
+    controller = PymordialController()
     logger.info("   ✓ Controller created\n")
 
     # Check if BlueStacks is running

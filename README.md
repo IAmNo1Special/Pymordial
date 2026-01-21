@@ -83,13 +83,13 @@ app:
 
 ### 1. Connect and Verify
 
-Create a `PymordialBluestacksController` to manage the connection.
+Create a `PymordialController` to manage the connection.
 
 ```python
-from pymordial import PymordialBluestacksController
+from pymordial import PymordialController
 
 # Initialize controller (auto-connects to default ADB host/port)
-controller = PymordialBluestacksController()
+controller = PymordialController()
 
 # Check Device Status
 if controller.bluestacks.is_ready():
@@ -186,7 +186,7 @@ if controller.my_game.is_open():
 The system is organized into a clean implementation hierarchy:
 
 ```
-PymordialBluestacksController
+PymordialController
 ├── adb (PymordialAdbDevice)
 │   ├── AdbShell (Bridge)
 │   ├── Streaming (H.264 -> PyAV)

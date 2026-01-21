@@ -1,24 +1,24 @@
-"""Tests for PymordialBluestacksController convenience methods."""
+"""Tests for PymordialController convenience methods."""
 
 from unittest.mock import Mock, patch
 
 import pytest
 
-from pymordial.core.bluestacks_controller import PymordialBluestacksController
+from pymordial.core.controller import PymordialController
 
 
 class TestConvenienceMethods:
-    """Test convenience delegation methods in PymordialBluestacksController."""
+    """Test convenience delegation methods in PymordialController."""
 
     @pytest.fixture
     def controller(self):
-        """Create a PymordialBluestacksController with mocked sub-controllers."""
+        """Create a PymordialController with mocked sub-controllers."""
         with (
-            patch("pymordial.core.bluestacks_controller.PymordialAdbDevice"),
-            patch("pymordial.core.bluestacks_controller.PymordialUiDevice"),
-            patch("pymordial.core.bluestacks_controller.PymordialBluestacksDevice"),
+            patch("pymordial.core.controller.PymordialAdbDevice"),
+            patch("pymordial.core.controller.PymordialUiDevice"),
+            patch("pymordial.core.controller.PymordialBluestacksDevice"),
         ):
-            controller = PymordialBluestacksController()
+            controller = PymordialController()
             # Mock the sub-controllers
             controller.adb = Mock()
             controller.ui = Mock()

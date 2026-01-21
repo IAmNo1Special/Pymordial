@@ -3,7 +3,7 @@
 import logging
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 from PIL import Image
@@ -11,6 +11,7 @@ from PIL import Image
 from pymordial.core.blueprints.element import PymordialElement
 from pymordial.core.blueprints.emulator_device import EmulatorState
 from pymordial.core.blueprints.extract_strategy import PymordialExtractStrategy
+from pymordial.core.registry import PluginRegistry
 from pymordial.devices.adb_device import PymordialAdbDevice
 from pymordial.devices.bluestacks_device import PymordialBluestacksDevice
 from pymordial.devices.ui_device import PymordialUiDevice
@@ -21,16 +22,19 @@ from pymordial.utils.config import get_config
 
 if TYPE_CHECKING:
     from pymordial.core.app import PymordialApp
+    from pymordial.core.plugin import PymordialPlugin
 
 logger = logging.getLogger(__name__)
 
 _CONFIG = get_config()
 
 
-class PymordialBluestacksController:
-    """Main controller that orchestrates ADB, BlueStacks, and Image controllers.
+class PymordialController:
+    """Main controller that orchestrates device interaction via plugins.
 
-    This specific implementation is tailored for BlueStacks automation.
+    This controller manages the lifecycle of connected devices (ADB, UI, Emulator)
+    using the Plugin Registry.
+
 
     Attributes:
         adb: The PymordialAdbDevice instance.
@@ -49,22 +53,80 @@ class PymordialBluestacksController:
         adb_port: int | None = None,
         apps: list["PymordialApp"] | None = None,
     ):
-        """Initializes the PymordialBluestacksController.
+        """Initializes the PymordialController.
 
         Args:
             adb_host: Optional ADB host address.
             adb_port: Optional ADB port.
             apps: Optional list of PymordialApp instances to register.
         """
-        self.adb = PymordialAdbDevice(host=adb_host, port=adb_port)
-        self.ui = PymordialUiDevice(bridge_device=self.adb)
-        self.bluestacks = PymordialBluestacksDevice(self.adb, self.ui)
+        self.registry = PluginRegistry(config=_CONFIG)
+        self.registry.load_from_entry_points()
+
+        # 1. Resolve ADB
+        self.adb = self._resolve_plugin(
+            "adb",
+            lambda: PymordialAdbDevice(host=adb_host, port=adb_port),
+        )
+
+        # 2. Resolve UI
+        def configure_ui(plugin: "PymordialPlugin") -> None:
+            if hasattr(plugin, "set_bridge_device"):
+                plugin.set_bridge_device(self.adb)
+
+        self.ui = self._resolve_plugin(
+            "ui",
+            lambda: PymordialUiDevice(bridge_device=self.adb),
+            configure_found_plugin=configure_ui,
+        )
+
+        # 3. Resolve BlueStacks
+        def configure_bluestacks(plugin: "PymordialPlugin") -> None:
+            if hasattr(plugin, "set_dependencies"):
+                plugin.set_dependencies(self.adb, self.ui)
+
+        self.bluestacks = self._resolve_plugin(
+            "bluestacks",
+            lambda: PymordialBluestacksDevice(self.adb, self.ui),
+            configure_found_plugin=configure_bluestacks,
+        )
+
         self._apps: dict[str, "PymordialApp"] = {}
         self._streaming_enabled = False  # Track if streaming should be active
 
         if apps:
             for app in apps:
                 self.add_app(app)
+
+    def _resolve_plugin(
+        self,
+        name: str,
+        default_factory: Callable[[], "PymordialPlugin"],
+        configure_found_plugin: Callable[["PymordialPlugin"], None] | None = None,
+    ) -> "PymordialPlugin":
+        """Resolves a plugin from the registry or falls back to a default.
+
+        Args:
+            name: The name of the plugin to resolve (e.g., 'adb').
+            default_factory: A function that returns a default plugin instance if not found.
+            configure_found_plugin: Optional callback to configure the found plugin (dependency injection).
+
+        Returns:
+            The resolved or default plugin instance.
+        """
+        try:
+            plugin = self.registry.get(name)
+            logger.info("Using %s plugin: %s", name.upper(), plugin.name)
+            if configure_found_plugin:
+                configure_found_plugin(plugin)
+            return plugin
+        except KeyError:
+            logger.debug(
+                "%s plugin not found. Using default implementation.", name.upper()
+            )
+            default_plugin = default_factory()
+            self.registry.register(default_plugin)
+            return default_plugin
 
     def __getattr__(self, name: str) -> "PymordialApp":
         """Enables dot-notation access to registered apps.
@@ -165,7 +227,7 @@ class PymordialBluestacksController:
                         "ADB device not connected. Skipping 'click_coords' method call."
                     )
                     return False
-                single_tap = PymordialBluestacksController.CMD_TAP.format(
+                single_tap = PymordialController.CMD_TAP.format(
                     x=coords[0], y=coords[1]
                 )
                 tap_command = " && ".join([single_tap] * times)
@@ -223,7 +285,7 @@ class PymordialBluestacksController:
                 return False
             case _:
                 logger.warning(
-                    "Cannot click coords - PymordialBluestacksController.bluestacks_state.current_state is not in a valid state."
+                    "Cannot click coords - PymordialController.bluestacks_state.current_state is not in a valid state."
                     " Make sure it is in the 'EmulatorState.READY' state."
                 )
                 return False
@@ -365,8 +427,7 @@ class PymordialBluestacksController:
                 self.find_element(
                     pymordial_element=pymordial_element,
                     pymordial_screenshot=pymordial_screenshot,
-                    max_tries=max_tries
-                    or PymordialBluestacksController.DEFAULT_MAX_TRIES,
+                    max_tries=max_tries or PymordialController.DEFAULT_MAX_TRIES,
                 )
                 is not None
             )
@@ -405,8 +466,7 @@ class PymordialBluestacksController:
                 self.find_element(
                     pymordial_element=pymordial_element,
                     pymordial_screenshot=pymordial_screenshot,
-                    max_tries=max_tries
-                    or PymordialBluestacksController.DEFAULT_MAX_TRIES,
+                    max_tries=max_tries or PymordialController.DEFAULT_MAX_TRIES,
                 )
                 is not None
             )
@@ -571,9 +631,9 @@ class PymordialBluestacksController:
         return self.adb.stop_stream()
 
     def __repr__(self) -> str:
-        """Returns a string representation of the PymordialBluestacksController."""
+        """Returns a string representation of the PymordialController."""
         return (
-            f"PymordialBluestacksController("
+            f"PymordialController("
             f"apps={len(self._apps)}, "
             f"adb_connected={self.adb.is_connected()}, "
             f"bluestacks={self.bluestacks.state.current_state.name})"
