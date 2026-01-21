@@ -66,7 +66,12 @@ class PymordialUiDevice(PymordialVisionDevice):
         )
 
     def initialize(self, config: dict) -> None:
-        """Initializes the UI device plugin."""
+        """Initializes the UI device plugin with configuration.
+
+        Args:
+            config: Configuration dictionary containing OCR settings,
+                timeouts, and other UI device parameters.
+        """
         # TODO: Use config to set OCR strategy/timeouts if provided
         pass
 

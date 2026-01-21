@@ -76,7 +76,12 @@ class PymordialBluestacksDevice(PymordialEmulatorDevice):
         )
 
     def initialize(self, config: dict) -> None:
-        """Initializes the Bluestacks device plugin."""
+        """Initializes the BlueStacks device plugin with configuration.
+
+        Args:
+            config: Configuration dictionary containing BlueStacks settings,
+                paths, and emulator parameters.
+        """
         pass
 
     def set_dependencies(
