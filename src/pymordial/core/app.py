@@ -10,7 +10,7 @@ from pymordial.utils.config import get_config
 if TYPE_CHECKING:
     from pymordial.core.blueprints.element import PymordialElement
     from pymordial.core.pymordial_screen import PymordialScreen
-    from pymordial.devices.pymordial_controller import PymordialController
+    from pymordial.core.controller import PymordialController
 
 
 _CONFIG = get_config()
