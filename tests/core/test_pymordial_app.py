@@ -4,10 +4,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from pymordial.core.elements.pymordial_image import PymordialImage
-from pymordial.core.elements.pymordial_text import PymordialText
-from pymordial.core.pymordial_app import PymordialApp
-from pymordial.state_machine import AppState
+from pymordial.core.app import PymordialApp
+from pymordial.core.state_machine import AppState
+from pymordial.ui.text import PymordialText
 
 
 def test_pymordial_app_init_success(mock_config):
@@ -23,7 +22,7 @@ def test_pymordial_app_init_success(mock_config):
 
 def test_pymordial_app_init_with_screens(mock_config):
     """Test app initialization with screens."""
-    from pymordial.core.pymordial_screen import PymordialScreen
+    from pymordial.core.screen import PymordialScreen
 
     screens = {"main": PymordialScreen(name="main")}
     app = PymordialApp(app_name="TestApp", package_name="com.test.app", screens=screens)
@@ -56,7 +55,7 @@ def test_pymordial_app_init_invalid_package_name(mock_config):
 
 def test_add_screen(mock_config):
     """Test adding a screen to the app."""
-    from pymordial.core.pymordial_screen import PymordialScreen
+    from pymordial.core.screen import PymordialScreen
 
     app = PymordialApp(app_name="TestApp", package_name="com.test.app")
     screen = PymordialScreen(name="LoginScreen")
@@ -74,7 +73,7 @@ def test_open_without_controller(mock_config):
 
 def test_open_with_controller(mock_config, mock_adb_controller):
     """Test opening app with controller."""
-    from pymordial.controller.pymordial_controller import PymordialController
+    from pymordial.core.controller import PymordialController
 
     app = PymordialApp(app_name="TestApp", package_name="com.test.app")
 
@@ -98,7 +97,7 @@ def test_close_without_controller(mock_config):
 
 def test_close_with_controller(mock_config, mock_adb_controller):
     """Test closing app with controller."""
-    from pymordial.controller.pymordial_controller import PymordialController
+    from pymordial.core.controller import PymordialController
 
     app = PymordialApp(app_name="TestApp", package_name="com.test.app")
 

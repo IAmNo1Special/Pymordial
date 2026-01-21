@@ -2,10 +2,8 @@
 
 import pytest
 
-from pymordial.controller.adb_device import PymordialAdbDevice
-from pymordial.controller.bluestacks_device import PymordialBluestacksDevice
-from pymordial.controller.image_controller import ImageController
-from pymordial.controller.pymordial_controller import PymordialController
+from pymordial.core.controller import PymordialController
+from pymordial.devices.adb_device import PymordialAdbDevice
 
 
 @pytest.fixture(scope="session")
@@ -18,9 +16,9 @@ def real_adb_controller():
 
 
 @pytest.fixture(scope="session")
-def real_image_controller(real_pymordial_controller):
-    """Returns a real ImageController."""
-    return real_pymordial_controller.image
+def real_ui_device(real_pymordial_controller):
+    """Returns a real PymordialUiDevice."""
+    return real_pymordial_controller.ui
 
 
 @pytest.fixture(scope="session")

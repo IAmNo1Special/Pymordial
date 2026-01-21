@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from pymordial.controller.pymordial_controller import PymordialController
+from pymordial.core.controller import PymordialController
 
 
 class TestConvenienceMethods:
@@ -14,18 +14,14 @@ class TestConvenienceMethods:
     def controller(self):
         """Create a PymordialController with mocked sub-controllers."""
         with (
-            patch("pymordial.controller.pymordial_controller.PymordialAdbDevice"),
-            patch("pymordial.controller.pymordial_controller.ImageController"),
-            patch("pymordial.controller.pymordial_controller.TextController"),
-            patch(
-                "pymordial.controller.pymordial_controller.PymordialBluestacksDevice"
-            ),
+            patch("pymordial.core.controller.PymordialAdbDevice"),
+            patch("pymordial.core.controller.PymordialUiDevice"),
+            patch("pymordial.core.controller.PymordialBluestacksDevice"),
         ):
             controller = PymordialController()
             # Mock the sub-controllers
             controller.adb = Mock()
-            controller.image = Mock()
-            controller.text = Mock()
+            controller.ui = Mock()
             controller.bluestacks = Mock()
             return controller
 
@@ -114,14 +110,14 @@ class TestConvenienceMethods:
         controller.adb.get_current_app.assert_called_once()
         assert result == mock_package
 
-    def test_read_text_delegates_to_text_controller(self, controller):
-        """Test that read_text() delegates to text.read_text()."""
+    def test_read_text_delegates_to_ui_controller(self, controller):
+        """Test that read_text() delegates to ui.read_text()."""
         mock_text = ["Line 1", "Line 2", "Line 3"]
-        controller.text.read_text.return_value = mock_text
+        controller.ui.read_text.return_value = mock_text
 
         result = controller.read_text(b"screenshot_bytes")
 
-        controller.text.read_text.assert_called_once_with(
+        controller.ui.read_text.assert_called_once_with(
             b"screenshot_bytes", False, None
         )
         assert result == mock_text
@@ -132,22 +128,22 @@ class TestConvenienceMethods:
 
         mock_strategy = Mock()
         mock_text = ["Text with strategy"]
-        controller.text.read_text.return_value = mock_text
+        controller.ui.read_text.return_value = mock_text
 
         result = controller.read_text("image.png", strategy=mock_strategy)
 
-        controller.text.read_text.assert_called_once_with(
+        controller.ui.read_text.assert_called_once_with(
             "image.png", False, mock_strategy
         )
         assert result == mock_text
 
-    def test_check_text_delegates_to_text_controller(self, controller):
-        """Test that check_text() delegates to text.check_text()."""
-        controller.text.check_text.return_value = True
+    def test_check_text_delegates_to_ui_controller(self, controller):
+        """Test that check_text() delegates to ui.check_text()."""
+        controller.ui.check_text.return_value = True
 
         result = controller.check_text("Victory", b"screenshot", case_sensitive=False)
 
-        controller.text.check_text.assert_called_once_with(
+        controller.ui.check_text.assert_called_once_with(
             "Victory", b"screenshot", False, None
         )
         assert result is True

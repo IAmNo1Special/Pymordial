@@ -2,9 +2,9 @@
 
 import pytest
 
-from pymordial.core.elements.pymordial_image import PymordialImage
-from pymordial.core.elements.pymordial_pixel import PymordialPixel
-from pymordial.core.elements.pymordial_text import PymordialText
+from pymordial.ui.image import PymordialImage
+from pymordial.ui.pixel import PymordialPixel
+from pymordial.ui.text import PymordialText
 
 
 def test_pymordial_element_label_lowercase(mock_config):

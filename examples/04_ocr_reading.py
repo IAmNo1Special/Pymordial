@@ -10,8 +10,11 @@ This script demonstrates how to:
 
 from logging import INFO, basicConfig, getLogger
 
-from pymordial.controller.pymordial_controller import PymordialController
-from pymordial.ocr.extract_strategy import DefaultExtractStrategy, RevomonTextStrategy
+from pymordial.core.controller import PymordialController
+from pymordial.devices.extract_strategies import (
+    DefaultExtractStrategy,
+    RevomonTextStrategy,
+)
 
 logger = getLogger(__name__)
 
@@ -41,7 +44,7 @@ def main():
 
     # Example 1: Extract all text using default OCR
     logger.info("3. Extracting all text (default OCR)...")
-    text_lines = controller.text.read_text(screenshot)
+    text_lines = controller.ui.read_text(screenshot)
 
     logger.info(f"   Found {len(text_lines)} lines of text:")
     for i, line in enumerate(text_lines[:5], 1):  # Show first 5 lines
@@ -53,8 +56,8 @@ def main():
     # Example 2: Search for specific text
     logger.info("\n4. Searching for specific text...")
     search_term = "store"
-    found = controller.text.check_text(
-        text_to_find=search_term, image_path=screenshot, case_sensitive=False
+    found = controller.ui.check_text(
+        text_to_find=search_term, pymordial_screenshot=screenshot
     )
 
     if found:
@@ -64,7 +67,9 @@ def main():
 
     # Example 3: Find text coordinates
     logger.info("\n5. Finding text coordinates...")
-    coords = controller.text.find_text(text_to_find=search_term, image_path=screenshot)
+    coords = controller.ui.find_text(
+        text_to_find=search_term, pymordial_screenshot=screenshot
+    )
 
     if coords:
         logger.info(f"   ✓ Found '{search_term}' at coordinates: {coords}")
@@ -74,14 +79,18 @@ def main():
     # Example 4: Using custom extraction strategy
     logger.info("\n6. Using default extraction strategy...")
     strategy = DefaultExtractStrategy()
-    custom_text = controller.text.read_text(screenshot, strategy=strategy)
+    custom_text = controller.ui.read_text(
+        pymordial_screenshot=screenshot, strategy=strategy
+    )
 
     logger.info(f"   Extracted {len(custom_text)} lines with strategy")
 
     # Example 5: Game-specific strategy (if using Revomon)
     logger.info("\n7. Using Revomon-specific strategy...")
     revomon_strategy = RevomonTextStrategy(mode="default")
-    revomon_text = controller.text.read_text(screenshot, strategy=revomon_strategy)
+    revomon_text = controller.ui.read_text(
+        pymordial_screenshot=screenshot, strategy=revomon_strategy
+    )
 
     logger.info(f"   Extracted {len(revomon_text)} lines with Revomon strategy")
 

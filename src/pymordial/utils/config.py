@@ -63,27 +63,6 @@ class AdbConfig(TypedDict):
     app_check_retries: int
     keyevents: AdbKeyEventsConfig
     commands: AdbCommandsConfig
-    adb_screenshot_img: str
-    adb_screenshot_img_label: str
-
-
-class BlueStacksAssetsConfig(TypedDict):
-    bluestacks_my_games_button: str
-    bluestacks_store_search_input: str
-    bluestacks_store_button: str
-    bluestacks_playstore_search_input: str
-    bluestacks_loading_screen_img: str
-
-
-class BluestacksUiConfig(TypedDict):
-    my_games_button_label: str
-    my_games_text: str
-    store_search_input_label: str
-    store_search_text: str
-    store_button_label: str
-    playstore_search_input_label: str
-    loading_screen_img_label: str
-    assets: BlueStacksAssetsConfig
 
 
 class BluestacksConfig(TypedDict):
@@ -97,10 +76,9 @@ class BluestacksConfig(TypedDict):
     default_ui_load_wait_time: int
     hd_player_exe: str
     window_title: str
-    ui: BluestacksUiConfig
 
 
-class ImageControllerConfig(TypedDict):
+class VisionConfig(TypedDict):
     default_wait_time: int
     default_find_ui_retries: int
 
@@ -175,10 +153,6 @@ class ExtractStrategyConfig(TypedDict):
     tesseract: TesseractConfig
 
 
-class EasyOcrConfig(TypedDict):
-    default_languages: list[str]
-
-
 class SetupConfig(TypedDict):
     installer_name: str
     download_url: str
@@ -194,11 +168,10 @@ class ControllerConfig(TypedDict):
 class PymordialConfig(TypedDict):
     adb: AdbConfig
     bluestacks: BluestacksConfig
-    image_controller: ImageControllerConfig
+    image_controller: VisionConfig
     app: AppConfig
     element: ElementConfig
     extract_strategy: ExtractStrategyConfig
-    easyocr: EasyOcrConfig
     setup: SetupConfig
     controller: ControllerConfig
 
@@ -219,7 +192,6 @@ def _validate_config(config: dict) -> None:
         "app",
         "element",
         "extract_strategy",
-        "easyocr",
         "setup",
         "controller",
     ]
@@ -232,8 +204,6 @@ def _validate_config(config: dict) -> None:
         raise ValueError("Missing required config section: bluestacks.ui")
     if "commands" not in config["adb"]:
         raise ValueError("Missing required config section: adb.commands")
-    if "assets" not in config["adb"]:
-        raise ValueError("Missing required config section: adb.assets")
     if "assets" not in config["bluestacks"]["ui"]:
         raise ValueError("Missing required config section: bluestacks.ui.assets")
 

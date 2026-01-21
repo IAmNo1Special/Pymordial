@@ -4,20 +4,19 @@ This package exposes the main controller, app, and element classes for
 automating BlueStacks interactions.
 """
 
-from pymordial.assets import BluestacksElements
-from pymordial.controller import (
-    ImageController,
-    PymordialAdbDevice,
-    PymordialBluestacksDevice,
-    PymordialController,
-    TextController,
-)
-from pymordial.core import PymordialApp, PymordialElement, PymordialScreen
-from pymordial.core.elements.pymordial_image import PymordialImage
-from pymordial.core.elements.pymordial_pixel import PymordialPixel
-from pymordial.core.elements.pymordial_text import PymordialText
-from pymordial.core.pymordial_emulator import EmulatorState
-from pymordial.exceptions import (
+from pymordial.core.app import PymordialApp
+from pymordial.core.blueprints.element import PymordialElement
+from pymordial.core.blueprints.emulator_device import EmulatorState
+from pymordial.core.controller import PymordialController
+from pymordial.core.screen import PymordialScreen
+from pymordial.core.state_machine import AppState, StateMachine
+from pymordial.devices.adb_device import PymordialAdbDevice
+from pymordial.devices.bluestacks_device import PymordialBluestacksDevice
+from pymordial.devices.ui_device import PymordialUiDevice
+from pymordial.ui.image import PymordialImage
+from pymordial.ui.pixel import PymordialPixel
+from pymordial.ui.text import PymordialText
+from pymordial.utils.exceptions import (
     PymordialAppError,
     PymordialConnectionError,
     PymordialEmulatorError,
@@ -25,7 +24,6 @@ from pymordial.exceptions import (
     PymordialStateError,
     PymordialTimeoutError,
 )
-from pymordial.state_machine import AppState, StateMachine
 
 __all__ = [
     "PymordialAdbDevice",
@@ -44,11 +42,9 @@ __all__ = [
     "PymordialText",
     "PymordialTimeoutError",
     "PymordialBluestacksDevice",
-    "BluestacksElements",
     "EmulatorState",
-    "ImageController",
-    "TextController",
+    "PymordialUiDevice",
     "StateMachine",
 ]
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"

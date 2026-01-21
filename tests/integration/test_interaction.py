@@ -4,21 +4,42 @@ import time
 
 import pytest
 
-from pymordial.controller.pymordial_controller import PymordialController
-from pymordial.core.pymordial_app import PymordialApp
+from pymordial.core.app import PymordialApp
+from pymordial.core.controller import PymordialController
 
 
 @pytest.mark.integration
 def test_find_and_click_element(real_pymordial_controller: PymordialController):
     """Verifies that an element can be found and clicked."""
+    import os
+
+    from pymordial.ui.image import PymordialImage
+
     # Ensure we are on home screen
     real_pymordial_controller.go_home()
 
-    # Use the store button as a target element
-    store_button = real_pymordial_controller.bluestacks.elements.bluestacks_store_button
+    # Define the element locally using the example asset
+    # Assuming running from project root
+    asset_path = os.path.abspath("examples/assets/bluestacks_store_button.png")
+
+    # Check if file exists, if not try to find it relative to this file
+    if not os.path.exists(asset_path):
+        # Fallback for different CWD
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        asset_path = os.path.join(
+            base_dir, "examples", "assets", "bluestacks_store_button.png"
+        )
+
+    if not os.path.exists(asset_path):
+        pytest.skip(f"Asset not found at {asset_path}")
+
+    store_button = PymordialImage(
+        label="store_button", filepath=asset_path, confidence=0.7
+    )
 
     # Attempt to find and click the element
-    result = real_pymordial_controller.click_element(store_button)
+    # using max_tries=3 to give it a chance
+    result = real_pymordial_controller.click_element(store_button, max_tries=3)
 
     # Assert that the element was found and clicked successfully
     assert result is True, "Store button not found or failed to click"

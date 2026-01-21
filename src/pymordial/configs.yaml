@@ -32,9 +32,6 @@ adb:
     text: "input text {text}"
     keyevent: "input keyevent {keycode}"
     monkey: "monkey -p {package_name} -v {verbosity}"
-  adb_screenshot_img_label: "adb_screenshot_img"
-  assets:
-    adb_screenshot_img: "adb_screenshot_img.png"
 bluestacks:
   default_resolution: [1920, 1080]
   default_open_app_max_retries: 5
@@ -48,20 +45,13 @@ bluestacks:
   hd_player_exe: "HD-Player.exe"
   window_title: "Bluestacks App Player"
   ui:
-    my_games_button_label: "bluestacks_my_games_button"
-    my_games_text: "My games"
     store_search_input_label: "bluestacks_store_search_input"
     store_search_text: "Search for games & apps"
     store_button_label: "bluestacks_store_button"
-    playstore_search_input_label: "bluestacks_playstore_search_input"
-    loading_screen_img_label: "bluestacks_loading_screen_img"
 
     assets:
-      my_games_button: "bluestacks_my_games_button.png"
       store_search_input: "bluestacks_store_search_input.png"
       store_button: "bluestacks_store_button.png"
-      playstore_search_input: "bluestacks_playstore_search_input.png"
-      loading_screen_img: "bluestacks_loading_screen_img.png"
 image_controller:
   default_wait_time: 1
   default_find_ui_retries: 2
@@ -98,7 +88,7 @@ extract_strategy:
   tesseract:
     base_config: "--oem 3"
     default_config: "--oem 3 --psm 6"
-    tesseract_cmd: "F:\\Pymordial\\src\\pymordial\\bin\\tesseract.exe"
+    tesseract_cmd: "tesseract"
     preprocess:
       upscale_factor: 2
       denoise_strength: 10
@@ -110,8 +100,6 @@ extract_strategy:
       single_word: "8"
       single_line: "7"
       block: "6"
-easyocr:
-  default_languages: ["en"]
 setup:
   installer_name: "BlueStacksInstaller.exe"
   download_url: "https://cloud.bluestacks.com/api/getdownloadnow?platform=win&win_arch=64&main_program=app_player"

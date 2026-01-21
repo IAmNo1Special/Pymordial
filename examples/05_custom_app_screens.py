@@ -10,11 +10,11 @@ This script demonstrates how to:
 from logging import INFO, basicConfig, getLogger
 from pathlib import Path
 
-from pymordial.controller.pymordial_controller import PymordialController
-from pymordial.core.elements.pymordial_image import PymordialImage
-from pymordial.core.elements.pymordial_text import PymordialText
-from pymordial.core.pymordial_app import PymordialApp
-from pymordial.core.pymordial_screen import PymordialScreen
+from pymordial.core.app import PymordialApp
+from pymordial.core.controller import PymordialController
+from pymordial.core.screen import PymordialScreen
+from pymordial.ui.image import PymordialImage
+from pymordial.ui.text import PymordialText
 
 logger = getLogger(__name__)
 
@@ -43,14 +43,14 @@ def main():
     store_button: PymordialImage = PymordialImage(
         label="store_button",
         og_resolution=(1920, 1080),
-        filepath=Path(r"F:\Pymordial\src\pymordial\assets\bluestacks_store_button.png"),
+        filepath=Path(__file__).parent / "assets/bluestacks_store_button.png",
         confidence=0.6,
     )
 
     playstore_search_input: PymordialImage = PymordialImage(
         label="playstore_search_input",
         og_resolution=(1920, 1080),
-        filepath=Path(r"F:\Pymordial\src\pymordial\assets\bluestacks_playstore_search_input.png"),
+        filepath=Path(__file__).parent / "assets/bluestacks_store_search_input.png",
         confidence=0.5,
         image_text="Search for games & apps",
     )
