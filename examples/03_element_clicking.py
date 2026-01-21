@@ -43,7 +43,7 @@ def main():
     store_button: PymordialImage = PymordialImage(
         label="store_button",
         og_resolution=(1920, 1080),
-        filepath=Path(r"F:\Pymordial\examples\assets\bluestacks_store_button.png"),
+        filepath=Path(__file__).parent / "assets/bluestacks_store_button.png",
         confidence=0.6,
     )
     logger.info(f"   Created: {store_button}\n")
