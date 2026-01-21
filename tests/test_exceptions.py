@@ -2,11 +2,14 @@
 
 import pytest
 
-from pymordial.utils.exceptions import (PymordialAppError,
-                                        PymordialConnectionError,
-                                        PymordialEmulatorError, PymordialError,
-                                        PymordialStateError,
-                                        PymordialTimeoutError)
+from pymordial.utils.exceptions import (
+    PymordialAppError,
+    PymordialConnectionError,
+    PymordialEmulatorError,
+    PymordialError,
+    PymordialStateError,
+    PymordialTimeoutError,
+)
 
 
 def test_pymordial_error_base():

@@ -5,8 +5,10 @@ Core module for Pymordial.
 from pymordial.core.app import PymordialApp
 from pymordial.core.blueprints.bridge_device import PymordialBridgeDevice
 from pymordial.core.blueprints.element import PymordialElement
-from pymordial.core.blueprints.emulator_device import (EmulatorState,
-                                                       PymordialEmulatorDevice)
+from pymordial.core.blueprints.emulator_device import (
+    EmulatorState,
+    PymordialEmulatorDevice,
+)
 from pymordial.core.blueprints.vision_device import PymordialVisionDevice
 from pymordial.core.controller import PymordialController
 from pymordial.core.screen import PymordialScreen
