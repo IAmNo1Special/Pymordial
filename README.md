@@ -13,14 +13,13 @@ Pymordial is an extensible automation framework designed to support any platform
 ## Key Features
 
 - **Platform Agnostic Design**: Built to support custom device implementations.
-- **BlueStacks Integration**: Native support for **BlueStacks 5** (launch, kill, window management) included out-of-the-box.
+- **BlueStacks Integration**: Native support for **BlueStacks 5** (launch, kill, lifecycle management) included out-of-the-box.
 - **Pure Python ADB**: Uses `adb-shell` for direct communication without requiring a system ADB installation.
 - **High-Performance Streaming**: Implements H.264 screen capture streaming for low-latency visual feedback.
 - **Unified Vision System**: Seamlessly find and interact with:
     - **Images**: Template matching with confidence thresholds.
     - **Text**: OCR powered by Tesseract.
     - **Pixels**: Precise color verification with tolerance.
-- **BlueStacks Integration**: Native control over the BlueStacks emulator (launch, kill, window management).
 - **App Lifecycle Management**: Robust `StateMachine` (CLOSED → LOADING → READY) for app stability.
 - **Type-Safe Configuration**: Strictly typed configuration system via `TypedDict`.
 
@@ -194,7 +193,7 @@ PymordialController
 │
 ├── bluestacks (PymordialBluestacksDevice)
 │   ├── Process Management
-│   └── Window Control
+│   └── Lifecycle Control
 │
 └── ui (PymordialUiDevice)
     ├── Vision Strategy (OpenCV)
