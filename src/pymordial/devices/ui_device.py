@@ -6,10 +6,10 @@ from logging import DEBUG, basicConfig, getLogger
 from pathlib import Path
 from time import sleep
 
+import cv2
 import numpy as np
 from adb_shell.exceptions import TcpTimeoutException
 from PIL import Image
-from pyautogui import ImageNotFoundException, center, locate
 
 from pymordial.core.blueprints.bridge_device import PymordialBridgeDevice
 from pymordial.core.blueprints.element import PymordialElement
@@ -323,9 +323,10 @@ class PymordialUiDevice(PymordialVisionDevice):
                             haystack_img = Image.open(BytesIO(pymordial_screenshot))
                         elif isinstance(pymordial_screenshot, np.ndarray):
                             haystack_img = Image.fromarray(pymordial_screenshot)
+                        elif isinstance(pymordial_screenshot, Image.Image):
+                            haystack_img = pymordial_screenshot
                         else:
                             # Should not happen if capture_screen returns correct types
-                            # But if user passes something else...
                             self.logger.warning(
                                 f"Unsupported image type: {type(pymordial_screenshot)}. Attempting to open as file path if string."
                             )
@@ -343,24 +344,48 @@ class PymordialUiDevice(PymordialVisionDevice):
                             bluestacks_resolution=pymordial_element.og_resolution,
                         )
 
-                        ui_location = locate(
-                            needleImage=scaled_img,
-                            haystackImage=haystack_img,
-                            confidence=pymordial_element.confidence,
-                            grayscale=True,
-                            region=pymordial_element.region,
+                        # Prepare OpenCV images
+                        haystack_cv = cv2.cvtColor(
+                            np.array(haystack_img), cv2.COLOR_RGB2BGR
                         )
-                    except ImageNotFoundException:
-                        self.logger.debug(
-                            f"Failed to find PymordialImage element: {pymordial_element.label}"
+                        needle_cv = cv2.cvtColor(
+                            np.array(scaled_img), cv2.COLOR_RGB2BGR
                         )
+
+                        if pymordial_element.region:
+                            left, top, width, height = pymordial_element.region
+                            haystack_cv = haystack_cv[
+                                top : top + height, left : left + width
+                            ]
+                        else:
+                            left, top = 0, 0
+
+                        result = cv2.matchTemplate(
+                            haystack_cv, needle_cv, cv2.TM_CCOEFF_NORMED
+                        )
+                        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+                        if max_val >= pymordial_element.confidence:
+                            # max_loc is (x, y) relative to the region
+                            match_x = max_loc[0] + left
+                            match_y = max_loc[1] + top
+                            match_w, match_h = scaled_img.size
+
+                            ui_location = (match_x, match_y, match_w, match_h)
+                        else:
+                            ui_location = None
+
                     except Exception as e:
                         self.logger.error(
                             f"Error finding element {pymordial_element.label}: {e}"
                         )
 
                     if ui_location:
-                        coords = center(ui_location)
+                        # coords = center(ui_location) -> (x + w//2, y + h//2)
+                        coords = (
+                            ui_location[0] + ui_location[2] // 2,
+                            ui_location[1] + ui_location[3] // 2,
+                        )
                         self.logger.debug(
                             f"PymordialImage {pymordial_element.label} found at: {coords}"
                         )

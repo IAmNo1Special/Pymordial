@@ -127,11 +127,49 @@ def test_where_element_not_found(mock_config, mock_adb_device):
         "pymordial.devices.ui_device.Image.open",
         return_value=mock_template,
     ):
-        # We need to mock 'locate' to return None
-        with patch("pymordial.devices.ui_device.locate", return_value=None):
-            result = device.where_element(
-                pymordial_element=image_elem,
-                pymordial_screenshot=mock_screen,
-                max_tries=1,  # Important to avoid infinite loop if max_tries defaults to None/infinite
-            )
-            assert result is None
+        with patch("pymordial.devices.ui_device.cv2.matchTemplate"):
+            # We mock minMaxLoc to return a low confidence value
+            with patch(
+                "pymordial.devices.ui_device.cv2.minMaxLoc",
+                return_value=(0, 0.5, (0, 0), (0, 0)),
+            ):
+                result = device.where_element(
+                    pymordial_element=image_elem,
+                    pymordial_screenshot=mock_screen,
+                    max_tries=1,
+                )
+                assert result is None
+
+
+def test_where_element_success(mock_config, mock_adb_device):
+    """Test where_element when element is successfully found."""
+    device = PymordialUiDevice(bridge_device=mock_adb_device)
+
+    image_elem = PymordialImage(
+        label="test",
+        filepath="test.png",
+        confidence=0.8,
+        og_resolution=(1920, 1080),
+    )
+
+    # Create test images
+    mock_screen = Image.new("RGB", (1920, 1080), color=(0, 0, 0))
+    mock_template = Image.new("RGB", (100, 100), color=(255, 255, 255))
+
+    with patch(
+        "pymordial.devices.ui_device.Image.open",
+        return_value=mock_template,
+    ):
+        with patch("pymordial.devices.ui_device.cv2.matchTemplate"):
+            # We mock minMaxLoc to return a high confidence value (0.9) at (10, 10)
+            # Center of 100x100 starting at (10, 10) is (60, 60)
+            with patch(
+                "pymordial.devices.ui_device.cv2.minMaxLoc",
+                return_value=(0, 0.9, (0, 0), (10, 10)),
+            ):
+                result = device.where_element(
+                    pymordial_element=image_elem,
+                    pymordial_screenshot=mock_screen,
+                    max_tries=1,
+                )
+                assert result == (60, 60)
