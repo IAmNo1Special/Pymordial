@@ -1,11 +1,9 @@
 """Tests for the Pymordial Plugin System."""
 
-from typing import Protocol, runtime_checkable
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pymordial.core.plugin import PymordialPlugin
 from pymordial.core.registry import PluginRegistry
 
 
