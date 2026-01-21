@@ -11,7 +11,7 @@ import time
 from logging import INFO, basicConfig, getLogger
 
 from pymordial.core.app import PymordialApp
-from pymordial.core.bluestacks_controller import PymordialBluestacksController
+from pymordial.core.controller import PymordialController
 
 logger = getLogger(__name__)
 
@@ -22,8 +22,8 @@ def main():
     logger.info("=== Pymordial App Control Example ===\n")
 
     # Create controller and ensure BlueStacks is running
-    logger.info("1. Creating PymordialBluestacksController...")
-    controller = PymordialBluestacksController()
+    logger.info("1. Creating PymordialController...")
+    controller = PymordialController()
 
     if not controller.bluestacks.is_ready():
         logger.info("   Opening BlueStacks...")

@@ -5,12 +5,12 @@ import time
 import pytest
 
 from pymordial.core.app import PymordialApp
-from pymordial.core.bluestacks_controller import PymordialBluestacksController
+from pymordial.core.controller import PymordialController
 
 
 @pytest.mark.integration
 def test_find_and_click_element(
-    real_pymordial_controller: PymordialBluestacksController,
+    real_pymordial_controller: PymordialController,
 ):
     """Verifies that an element can be found and clicked."""
     import os
@@ -48,7 +48,7 @@ def test_find_and_click_element(
 
 
 @pytest.mark.integration
-def test_ocr_text_extraction(real_pymordial_controller: PymordialBluestacksController):
+def test_ocr_text_extraction(real_pymordial_controller: PymordialController):
     """Verifies that text can be extracted from the screen."""
     time.sleep(5)
     # Ensure we are on home screen
@@ -76,7 +76,7 @@ def test_ocr_text_extraction(real_pymordial_controller: PymordialBluestacksContr
 
 
 @pytest.mark.integration
-def test_app_lifecycle(real_pymordial_controller: PymordialBluestacksController):
+def test_app_lifecycle(real_pymordial_controller: PymordialController):
     """Verifies app open/close lifecycle using Settings app."""
     # Create a PymordialApp for Settings
     settings_app = PymordialApp(

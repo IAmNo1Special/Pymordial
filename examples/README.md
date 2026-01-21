@@ -14,7 +14,7 @@ Practical examples demonstrating Pymordial for Android automation on BlueStacks.
 **Basics**: Connecting to BlueStacks via ADB
 
 Learn how to:
-- Create a `PymordialBluestacksController`
+- Create a `PymordialController`
 - Check connection status
 - Execute shell commands
 - Verify Android version

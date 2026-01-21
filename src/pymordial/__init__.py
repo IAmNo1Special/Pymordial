@@ -7,7 +7,7 @@ automating BlueStacks interactions.
 from pymordial.core.app import PymordialApp
 from pymordial.core.blueprints.element import PymordialElement
 from pymordial.core.blueprints.emulator_device import EmulatorState
-from pymordial.core.bluestacks_controller import PymordialBluestacksController
+from pymordial.core.controller import PymordialController
 from pymordial.core.screen import PymordialScreen
 from pymordial.core.state_machine import AppState, StateMachine
 from pymordial.devices.adb_device import PymordialAdbDevice
@@ -31,7 +31,7 @@ __all__ = [
     "PymordialApp",
     "PymordialAppError",
     "PymordialConnectionError",
-    "PymordialBluestacksController",
+    "PymordialController",
     "PymordialElement",
     "PymordialEmulatorError",
     "PymordialError",
