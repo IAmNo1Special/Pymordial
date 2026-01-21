@@ -191,19 +191,29 @@ def mock_vision_device(mock_adb_controller, mock_config):
 
 
 @pytest.fixture
-def mock_bluestacks_controller(mock_adb_controller, mock_vision_device, mock_config):
+def mock_bluestacks_device(mock_adb_controller, mock_vision_device, mock_config):
     """Returns a PymordialBluestacksDevice with mocked dependencies."""
     with (
         patch("pymordial.devices.bluestacks_device.psutil"),
         patch("pymordial.devices.bluestacks_device.os.path.exists", return_value=True),
         patch("pymordial.devices.bluestacks_device.os.startfile"),
     ):
-        controller = PymordialBluestacksDevice(
+        device = PymordialBluestacksDevice(
             adb_bridge_device=mock_adb_controller,
             vision_device=mock_vision_device,
             config=mock_config["bluestacks"],
         )
-        return controller
+        return device
+
+
+@pytest.fixture
+def mock_controller(mock_adb_controller, mock_vision_device, mock_bluestacks_device):
+    """Returns a PymordialController with mocked dependencies."""
+    controller = PymordialController()
+    controller.adb = mock_adb_controller
+    controller.ui = mock_vision_device
+    controller.bluestacks = mock_bluestacks_device
+    return controller
 
 
 @pytest.fixture

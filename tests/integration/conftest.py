@@ -22,7 +22,7 @@ def real_ui_device(real_pymordial_controller):
 
 
 @pytest.fixture(scope="session")
-def real_bluestacks_controller(real_pymordial_controller):
+def real_bluestacks_device(real_pymordial_controller):
     """Returns a real PymordialBluestacksDevice with BlueStacks already open."""
     return real_pymordial_controller.bluestacks
 

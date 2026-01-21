@@ -3,7 +3,7 @@
 import logging
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 from PIL import Image
@@ -22,6 +22,7 @@ from pymordial.utils.config import get_config
 
 if TYPE_CHECKING:
     from pymordial.core.app import PymordialApp
+    from pymordial.core.plugin import PymordialPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -63,40 +64,32 @@ class PymordialController:
         self.registry.load_from_entry_points()
 
         # 1. Resolve ADB
-        try:
-            self.adb = self.registry.get("adb")
-            logger.info("Using ADB plugin: %s", self.adb.name)
-            # If explicit host/port provided and plugin allows updates, we might want to set them.
-            # But the plugin instance is already created.
-            # For this version, we assume defaults or config usage by the plugin.
-        except KeyError:
-            logger.debug("ADB plugin not found. Using default PymordialAdbDevice.")
-            self.adb = PymordialAdbDevice(host=adb_host, port=adb_port)
-            self.registry.register(self.adb)
+        self.adb = self._resolve_plugin(
+            "adb",
+            lambda: PymordialAdbDevice(host=adb_host, port=adb_port),
+        )
 
         # 2. Resolve UI
-        try:
-            self.ui = self.registry.get("ui")
-            logger.info("Using UI plugin: %s", self.ui.name)
-            if hasattr(self.ui, "set_bridge_device"):
-                self.ui.set_bridge_device(self.adb)
-        except KeyError:
-            logger.debug("UI plugin not found. Using default PymordialUiDevice.")
-            self.ui = PymordialUiDevice(bridge_device=self.adb)
-            self.registry.register(self.ui)
+        def configure_ui(plugin: "PymordialPlugin") -> None:
+            if hasattr(plugin, "set_bridge_device"):
+                plugin.set_bridge_device(self.adb)
+
+        self.ui = self._resolve_plugin(
+            "ui",
+            lambda: PymordialUiDevice(bridge_device=self.adb),
+            configure_found_plugin=configure_ui,
+        )
 
         # 3. Resolve BlueStacks
-        try:
-            self.bluestacks = self.registry.get("bluestacks")
-            logger.info("Using BlueStacks plugin: %s", self.bluestacks.name)
-            if hasattr(self.bluestacks, "set_dependencies"):
-                self.bluestacks.set_dependencies(self.adb, self.ui)
-        except KeyError:
-            logger.debug(
-                "BlueStacks plugin not found. Using default PymordialBluestacksDevice."
-            )
-            self.bluestacks = PymordialBluestacksDevice(self.adb, self.ui)
-            self.registry.register(self.bluestacks)
+        def configure_bluestacks(plugin: "PymordialPlugin") -> None:
+            if hasattr(plugin, "set_dependencies"):
+                plugin.set_dependencies(self.adb, self.ui)
+
+        self.bluestacks = self._resolve_plugin(
+            "bluestacks",
+            lambda: PymordialBluestacksDevice(self.adb, self.ui),
+            configure_found_plugin=configure_bluestacks,
+        )
 
         self._apps: dict[str, "PymordialApp"] = {}
         self._streaming_enabled = False  # Track if streaming should be active
@@ -104,6 +97,36 @@ class PymordialController:
         if apps:
             for app in apps:
                 self.add_app(app)
+
+    def _resolve_plugin(
+        self,
+        name: str,
+        default_factory: Callable[[], "PymordialPlugin"],
+        configure_found_plugin: Callable[["PymordialPlugin"], None] | None = None,
+    ) -> "PymordialPlugin":
+        """Resolves a plugin from the registry or falls back to a default.
+
+        Args:
+            name: The name of the plugin to resolve (e.g., 'adb').
+            default_factory: A function that returns a default plugin instance if not found.
+            configure_found_plugin: Optional callback to configure the found plugin (dependency injection).
+
+        Returns:
+            The resolved or default plugin instance.
+        """
+        try:
+            plugin = self.registry.get(name)
+            logger.info("Using %s plugin: %s", name.upper(), plugin.name)
+            if configure_found_plugin:
+                configure_found_plugin(plugin)
+            return plugin
+        except KeyError:
+            logger.debug(
+                "%s plugin not found. Using default implementation.", name.upper()
+            )
+            default_plugin = default_factory()
+            self.registry.register(default_plugin)
+            return default_plugin
 
     def __getattr__(self, name: str) -> "PymordialApp":
         """Enables dot-notation access to registered apps.
@@ -404,8 +427,7 @@ class PymordialController:
                 self.find_element(
                     pymordial_element=pymordial_element,
                     pymordial_screenshot=pymordial_screenshot,
-                    max_tries=max_tries
-                    or PymordialController.DEFAULT_MAX_TRIES,
+                    max_tries=max_tries or PymordialController.DEFAULT_MAX_TRIES,
                 )
                 is not None
             )
@@ -444,8 +466,7 @@ class PymordialController:
                 self.find_element(
                     pymordial_element=pymordial_element,
                     pymordial_screenshot=pymordial_screenshot,
-                    max_tries=max_tries
-                    or PymordialController.DEFAULT_MAX_TRIES,
+                    max_tries=max_tries or PymordialController.DEFAULT_MAX_TRIES,
                 )
                 is not None
             )
