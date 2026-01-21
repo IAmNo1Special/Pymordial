@@ -5,6 +5,7 @@ from io import BytesIO
 from logging import DEBUG, basicConfig, getLogger
 from pathlib import Path
 from time import sleep
+from typing import TYPE_CHECKING
 
 import cv2
 import numpy as np
@@ -21,6 +22,9 @@ from pymordial.devices.tesseract_device import PymordialTesseractDevice
 from pymordial.ui.image import PymordialImage
 from pymordial.ui.pixel import PymordialPixel
 from pymordial.utils.config import VisionConfig, get_config
+
+if TYPE_CHECKING:
+    from pymordial.utils.config import PymordialConfig
 
 
 class PymordialUiDevice(PymordialVisionDevice):
@@ -65,12 +69,11 @@ class PymordialUiDevice(PymordialVisionDevice):
             config or get_config()["image_controller"]
         )
 
-    def initialize(self, config: dict) -> None:
+    def initialize(self, config: "PymordialConfig") -> None:
         """Initializes the UI device plugin with configuration.
 
         Args:
-            config: Configuration dictionary containing OCR settings,
-                timeouts, and other UI device parameters.
+            config: Global Pymordial configuration dictionary.
         """
         # TODO: Use config to set OCR strategy/timeouts if provided
         pass

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pymordial.core.app import PymordialApp
+    from pymordial.utils.config import PymordialConfig
 
 from io import BytesIO
 
@@ -82,11 +83,11 @@ class PymordialAdbDevice(PymordialBridgeDevice):
         self._is_streaming = threading.Event()
         self.logger.debug("PymordialAdbDevice initalized.")
 
-    def initialize(self, config: dict) -> None:
+    def initialize(self, config: "PymordialConfig") -> None:
         """Initializes the ADB device plugin.
 
         Args:
-            config: Global configuration dictionary.
+            config: Global Pymordial configuration dictionary.
         """
         # In a full comprehensive implementation, we might reload config here.
         # For now, we rely on __init__ logic or manual property updates.

@@ -4,6 +4,7 @@ import copy
 import os
 import time
 from logging import DEBUG, basicConfig, getLogger
+from typing import TYPE_CHECKING
 
 import psutil
 
@@ -16,6 +17,9 @@ from pymordial.core.blueprints.vision_device import PymordialVisionDevice
 from pymordial.devices.adb_device import PymordialAdbDevice
 from pymordial.utils import log_property_setter, validate_and_convert_int
 from pymordial.utils.config import BluestacksConfig, get_config
+
+if TYPE_CHECKING:
+    from pymordial.utils.config import PymordialConfig
 
 
 class PymordialBluestacksDevice(PymordialEmulatorDevice):
@@ -55,8 +59,8 @@ class PymordialBluestacksDevice(PymordialEmulatorDevice):
         self.config = copy.deepcopy(config or get_config()["bluestacks"])
         self.running_apps: list[PymordialApp] | list = list()
 
-        self._adb_bridge_device = adb_bridge_device
-        self._vision_device = vision_device
+        self._adb_bridge_device: PymordialAdbDevice | None = adb_bridge_device
+        self._vision_device: PymordialVisionDevice | None = vision_device
         self._ref_window_size: tuple[int, int] = tuple(
             self.config["default_resolution"]
         )
@@ -75,12 +79,11 @@ class PymordialBluestacksDevice(PymordialEmulatorDevice):
             f"PymordialBluestacksDevice initialized with the following state:\n{self.state}\n"
         )
 
-    def initialize(self, config: dict) -> None:
+    def initialize(self, config: "PymordialConfig") -> None:
         """Initializes the BlueStacks device plugin with configuration.
 
         Args:
-            config: Configuration dictionary containing BlueStacks settings,
-                paths, and emulator parameters.
+            config: Global Pymordial configuration dictionary.
         """
         pass
 

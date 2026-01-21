@@ -2,7 +2,7 @@
 
 import importlib.metadata
 import logging
-from typing import TYPE_CHECKING, Dict, Type
+from typing import TYPE_CHECKING, Dict
 
 from pymordial.core.plugin import PymordialPlugin
 
@@ -27,11 +27,11 @@ class PluginRegistry:
     def register(self, plugin: PymordialPlugin) -> None:
         """Registers a plugin instance.
 
+        If a plugin with the same name is already registered, a warning is logged
+        and the existing plugin is replaced with the new one.
+
         Args:
             plugin: The initialized plugin instance.
-
-        Raises:
-            ValueError: If a plugin with the same name is already registered.
         """
         if plugin.name in self._plugins:
             logger.warning(f"Overwriting existing plugin registration: {plugin.name}")
