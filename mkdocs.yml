@@ -1,0 +1,50 @@
+site_name: Pymordial
+site_description: The universal python automation framework.
+site_url: https://github.com/IAmNo1Special/Pymordial
+repo_url: https://github.com/IAmNo1Special/Pymordial
+repo_name: IAmNo1Special/Pymordial
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.expand
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Core Concepts: core-concepts.md
+  - UI Interaction: ui-interaction.md
+  - App Lifecycle: app-lifecycle.md
+  - Extending Pymordial: extending-pymordial.md
+  - API Reference:
+      - Controller: reference/controller.md
+      - Devices: reference/devices.md
