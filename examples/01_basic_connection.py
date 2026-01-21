@@ -9,7 +9,7 @@ This script demonstrates how to:
 
 from logging import INFO, basicConfig, getLogger
 
-from pymordial.controller.pymordial_controller import PymordialController
+from pymordial.core.controller import PymordialController
 
 logger = getLogger(__name__)
 
