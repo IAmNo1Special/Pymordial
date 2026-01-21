@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum, auto
 from logging import DEBUG, basicConfig, getLogger
 
-from pymordial.state_machine import StateMachine
+from pymordial.core.state_machine import StateMachine
 
 
 class EmulatorState(Enum):

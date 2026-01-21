@@ -2,8 +2,8 @@
 
 from dataclasses import dataclass, field
 
-from pymordial.core.pymordial_element import PymordialElement
-from pymordial.exceptions import ElementNotFoundError
+from pymordial.core.blueprints.element import PymordialElement
+from pymordial.utils.exceptions import ElementNotFoundError
 
 
 @dataclass
@@ -75,7 +75,7 @@ class PymordialScreen:
             return self.elements[label]
         except KeyError:
             raise ElementNotFoundError(
-                f"Element '{label}' not found on screen '{self.name}'"
+                f"Element '{label}' not found as element of screen '{self.name}'"
             )
 
     def remove_element(self, label: str) -> PymordialElement:

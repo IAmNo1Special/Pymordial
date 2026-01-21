@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from pymordial.core.pymordial_element import PymordialElement
+from pymordial.core.blueprints.element import PymordialElement
 from pymordial.utils.config import get_config
 
 _CONFIG = get_config()

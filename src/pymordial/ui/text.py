@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from pymordial.core.pymordial_element import PymordialElement
-from pymordial.ocr.extract_strategy import PymordialExtractStrategy
+from pymordial.core.blueprints.element import PymordialElement
+from pymordial.core.blueprints.extract_strategy import PymordialExtractStrategy
 
 
 @dataclass(kw_only=True)
