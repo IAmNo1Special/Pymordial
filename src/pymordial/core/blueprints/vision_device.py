@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from logging import DEBUG, basicConfig, getLogger
+
 from PIL import Image
 
 

@@ -152,6 +152,7 @@ class ExtractStrategyConfig(TypedDict):
     revomon: RevomonConfig
     tesseract: TesseractConfig
 
+
 class SetupConfig(TypedDict):
     installer_name: str
     download_url: str

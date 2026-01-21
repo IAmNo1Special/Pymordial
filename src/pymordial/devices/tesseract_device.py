@@ -128,7 +128,7 @@ class PymordialTesseractDevice(PymordialOCRDevice):
                 if int(data["conf"][i]) > 0:
                     text = data["text"][i].strip().lower()
                     if search_text_lower in text:
-                        (x, y, w, h) = (
+                        x, y, w, h = (
                             data["left"][i],
                             data["top"][i],
                             data["width"][i],
