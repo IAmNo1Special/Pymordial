@@ -29,6 +29,12 @@ classifiers = [
     "Topic :: Utilities"
 ]
 
+[project.entry-points."pymordial.plugins"]
+adb = "pymordial.devices.adb_device:PymordialAdbDevice"
+ui = "pymordial.devices.ui_device:PymordialUiDevice"
+bluestacks = "pymordial.devices.bluestacks_device:PymordialBluestacksDevice"
+
+
 [project.urls]
 homepage = "https://github.com/IAmNo1Special/Pymordial"
 issues = "https://github.com/IAmNo1Special/Pymordial/issues"

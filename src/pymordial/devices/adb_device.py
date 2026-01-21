@@ -32,11 +32,16 @@ class PymordialAdbDevice(PymordialBridgeDevice):
     per instance by modifying the instance attributes after initialization.
 
     Attributes:
+        name (str): The plugin name ("adb").
+        version (str): The plugin version.
         host (str): The address of the device; may be an IP address or a host name.
         port (int): The device port to which we are connecting
         device (AdbDeviceTcp): The adb_shell.AdbDeviceTcp instance.
         config (AdbConfig): The configuration dictionary.
     """
+
+    name: str = "adb"
+    version: str = "0.1.0"
 
     # DEFAULT_CONFIG will be fetched in __init__ if not provided
     # to allow easier testing and dynamic configuration updates.
@@ -76,6 +81,20 @@ class PymordialAdbDevice(PymordialBridgeDevice):
         self._latest_frame: np.ndarray | None = None
         self._is_streaming = threading.Event()
         self.logger.debug("PymordialAdbDevice initalized.")
+
+    def initialize(self, config: dict) -> None:
+        """Initializes the ADB device plugin.
+
+        Args:
+            config: Global configuration dictionary.
+        """
+        # In a full comprehensive implementation, we might reload config here.
+        # For now, we rely on __init__ logic or manual property updates.
+        pass
+
+    def shutdown(self) -> None:
+        """Disconnects and cleans up resources."""
+        self.disconnect()
 
     @property
     def is_streaming(self) -> bool:

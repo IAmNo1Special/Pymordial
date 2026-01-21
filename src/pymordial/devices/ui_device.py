@@ -37,6 +37,9 @@ class PymordialUiDevice(PymordialVisionDevice):
         ocr_engine: The backend engine used for text extraction (e.g., Tesseract).
     """
 
+    name: str = "ui"
+    version: str = "0.1.0"
+
     def __init__(
         self,
         bridge_device: PymordialBridgeDevice | None = None,
@@ -61,6 +64,23 @@ class PymordialUiDevice(PymordialVisionDevice):
         self.config: VisionConfig = copy.deepcopy(
             config or get_config()["image_controller"]
         )
+
+    def initialize(self, config: dict) -> None:
+        """Initializes the UI device plugin."""
+        # TODO: Use config to set OCR strategy/timeouts if provided
+        pass
+
+    def set_bridge_device(self, bridge_device: PymordialBridgeDevice) -> None:
+        """Sets the bridge device (dependency injection).
+
+        Args:
+             bridge_device: The bridge device instance to use.
+        """
+        self._bridge_device = bridge_device
+
+    def shutdown(self) -> None:
+        """Cleans up resources."""
+        pass
 
     def scale_img_to_screen(
         self,

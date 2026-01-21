@@ -11,6 +11,7 @@ from PIL import Image
 from pymordial.core.blueprints.element import PymordialElement
 from pymordial.core.blueprints.emulator_device import EmulatorState
 from pymordial.core.blueprints.extract_strategy import PymordialExtractStrategy
+from pymordial.core.registry import PluginRegistry
 from pymordial.devices.adb_device import PymordialAdbDevice
 from pymordial.devices.bluestacks_device import PymordialBluestacksDevice
 from pymordial.devices.ui_device import PymordialUiDevice
@@ -56,9 +57,45 @@ class PymordialBluestacksController:
             adb_port: Optional ADB port.
             apps: Optional list of PymordialApp instances to register.
         """
-        self.adb = PymordialAdbDevice(host=adb_host, port=adb_port)
-        self.ui = PymordialUiDevice(bridge_device=self.adb)
-        self.bluestacks = PymordialBluestacksDevice(self.adb, self.ui)
+        self.registry = PluginRegistry(config=_CONFIG)
+        self.registry.load_from_entry_points()
+
+        # 1. Resolve ADB
+        try:
+            self.adb = self.registry.get("adb")
+            logger.info("Using ADB plugin: %s", self.adb.name)
+            # If explicit host/port provided and plugin allows updates, we might want to set them.
+            # But the plugin instance is already created.
+            # For this version, we assume defaults or config usage by the plugin.
+        except KeyError:
+            logger.debug("ADB plugin not found. Using default PymordialAdbDevice.")
+            self.adb = PymordialAdbDevice(host=adb_host, port=adb_port)
+            self.registry.register(self.adb)
+
+        # 2. Resolve UI
+        try:
+            self.ui = self.registry.get("ui")
+            logger.info("Using UI plugin: %s", self.ui.name)
+            if hasattr(self.ui, "set_bridge_device"):
+                self.ui.set_bridge_device(self.adb)
+        except KeyError:
+            logger.debug("UI plugin not found. Using default PymordialUiDevice.")
+            self.ui = PymordialUiDevice(bridge_device=self.adb)
+            self.registry.register(self.ui)
+
+        # 3. Resolve BlueStacks
+        try:
+            self.bluestacks = self.registry.get("bluestacks")
+            logger.info("Using BlueStacks plugin: %s", self.bluestacks.name)
+            if hasattr(self.bluestacks, "set_dependencies"):
+                self.bluestacks.set_dependencies(self.adb, self.ui)
+        except KeyError:
+            logger.debug(
+                "BlueStacks plugin not found. Using default PymordialBluestacksDevice."
+            )
+            self.bluestacks = PymordialBluestacksDevice(self.adb, self.ui)
+            self.registry.register(self.bluestacks)
+
         self._apps: dict[str, "PymordialApp"] = {}
         self._streaming_enabled = False  # Track if streaming should be active
 

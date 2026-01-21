@@ -25,13 +25,17 @@ class PymordialBluestacksDevice(PymordialEmulatorDevice):
         running_apps: A list of currently running PymordialApp instances.
         state: The state machine managing the BlueStacks lifecycle state.
         elements: A container for BlueStacks UI elements.
+        elements: A container for BlueStacks UI elements.
         config: The configuration dictionary for BlueStacks.
     """
 
+    name: str = "bluestacks"
+    version: str = "0.1.0"
+
     def __init__(
         self,
-        adb_bridge_device: PymordialAdbDevice,
-        vision_device: PymordialVisionDevice,
+        adb_bridge_device: PymordialAdbDevice | None = None,
+        vision_device: PymordialVisionDevice | None = None,
         config: BluestacksConfig | None = None,
     ) -> None:
         """Initializes the PymordialBluestacksDevice.
@@ -51,11 +55,12 @@ class PymordialBluestacksDevice(PymordialEmulatorDevice):
         self.config = copy.deepcopy(config or get_config()["bluestacks"])
         self.running_apps: list[PymordialApp] | list = list()
 
-        self._adb_bridge_device: PymordialAdbDevice = adb_bridge_device
-        self._vision_device: PymordialVisionDevice = vision_device
+        self._adb_bridge_device = adb_bridge_device
+        self._vision_device = vision_device
         self._ref_window_size: tuple[int, int] = tuple(
             self.config["default_resolution"]
         )
+
         self._filepath: str | None = None
         self._hd_player_exe: str = self.config["hd_player_exe"]
 
@@ -69,6 +74,28 @@ class PymordialBluestacksDevice(PymordialEmulatorDevice):
         self.logger.debug(
             f"PymordialBluestacksDevice initialized with the following state:\n{self.state}\n"
         )
+
+    def initialize(self, config: dict) -> None:
+        """Initializes the Bluestacks device plugin."""
+        pass
+
+    def set_dependencies(
+        self,
+        adb_bridge_device: PymordialAdbDevice,
+        vision_device: PymordialVisionDevice,
+    ) -> None:
+        """Sets external dependencies (dependency injection).
+
+        Args:
+            adb_bridge_device: The ADB bridge device.
+            vision_device: The vision device.
+        """
+        self._adb_bridge_device = adb_bridge_device
+        self._vision_device = vision_device
+
+    def shutdown(self) -> None:
+        """Kills the emulator process."""
+        self.close()
 
     @property
     def ref_window_size(self) -> tuple[int, int] | None:
