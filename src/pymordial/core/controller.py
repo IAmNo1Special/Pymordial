@@ -183,4 +183,3 @@ class PymordialController(ABC):
     def __repr__(self) -> str:
         """Returns a string representation of the PymordialController."""
         return f"PymordialController(apps={len(self._apps)})"
-        return f"PymordialController(apps={len(self._apps)})"
