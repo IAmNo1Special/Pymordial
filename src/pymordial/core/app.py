@@ -117,7 +117,7 @@ class PymordialApp:
             raise ValueError(
                 f"{self.app_name}'s pymordial_controller is not initialized"
             )
-        result = self.pymordial_controller.adb.open_app(
+        result = self.pymordial_controller.open_app(
             self.app_name,
             package_name=self.package_name,
             timeout=APP_ACTION_TIMEOUT,
@@ -181,7 +181,7 @@ class PymordialApp:
             raise ValueError(
                 f"{self.app_name}'s pymordial_controller is not initialized"
             )
-        result = self.pymordial_controller.adb.close_app(
+        result = self.pymordial_controller.close_app(
             package_name=self.package_name,
             timeout=APP_ACTION_TIMEOUT,
             wait_time=APP_CLOSE_WAIT_TIME,
