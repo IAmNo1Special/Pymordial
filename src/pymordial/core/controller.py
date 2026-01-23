@@ -86,6 +86,7 @@ class PymordialController(ABC):
         """Registers a PymordialApp instance with this controller.
 
         This method adds the app to the internal registry using a sanitized name.
+        If an app with the same sanitized name already exists, it will be overwritten.
 
         Args:
             app: The PymordialApp instance to register.

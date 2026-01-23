@@ -11,7 +11,7 @@ from pymordial.ui.element import PymordialElement
 from pymordial.utils.exceptions import ScreenNotFoundError
 
 
-@dataclass
+@dataclass(eq=False)
 class PymordialApp:
     """Represents an application.
 
@@ -104,3 +104,13 @@ class PymordialApp:
             raise ScreenNotFoundError(
                 f"Screen '{name}' not found within the '{self.app_name}' app."
             )
+
+    def __hash__(self) -> int:
+        """Returns hash based on unique app_id."""
+        return hash(self.app_id)
+
+    def __eq__(self, other) -> bool:
+        """Compares apps by their unique app_id."""
+        if not isinstance(other, PymordialApp):
+            return NotImplemented
+        return self.app_id == other.app_id
