@@ -1,9 +1,8 @@
 """Core Protocol definition for Pymordial Plugins."""
 
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
-if TYPE_CHECKING:
-    from pymordial.utils.config import PymordialConfig
+from pymordial.utils.config import PymordialConfig
 
 
 @runtime_checkable
@@ -21,7 +20,7 @@ class PymordialPlugin(Protocol):
     name: str
     version: str
 
-    def initialize(self, config: "PymordialConfig") -> None:
+    def initialize(self, config: PymordialConfig) -> None:
         """Initializes the plugin with the provided configuration.
 
         Args:

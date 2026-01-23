@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Converted `PymordialApp`, `PymordialScreen`, and `PymordialElement` to pure dataclasses.
+- **Import refactor**: Removed unnecessary `TYPE_CHECKING` blocks and `from __future__ import annotations` across core modules; moved internal inter-core imports to top-level for better clarity.
 - **Blueprint Cleanup**:
     - Removed `basicConfig` from device blueprints (`PymordialBridgeDevice`, `PymordialVisionDevice`, `PymordialEmulatorDevice`).
     - Aligned `PymordialEmulatorDevice` state machine to be an instance attribute.

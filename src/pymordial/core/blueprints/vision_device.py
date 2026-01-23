@@ -1,9 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from PIL import Image
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +13,8 @@ class PymordialVisionDevice(ABC):
     """
 
     @abstractmethod
-    def scale_img_to_screen(self) -> "Image.Image":
+    @abstractmethod
+    def scale_img_to_screen(self) -> Any:
         """Scales the reference image to match the current screen resolution.
 
         Returns:

@@ -2,15 +2,13 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Callable
+from pathlib import Path
+from typing import Callable
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from pymordial.core.app import PymordialApp
-    from pymordial.core.blueprints.extract_strategy import PymordialExtractStrategy
-    from pymordial.core.plugin import PymordialPlugin
-    from pymordial.ui.element import PymordialElement
+from pymordial.core.app import PymordialApp
+from pymordial.core.blueprints.extract_strategy import PymordialExtractStrategy
+from pymordial.core.plugin import PymordialPlugin
+from pymordial.ui.element import PymordialElement
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +27,14 @@ class PymordialController(ABC):
 
     def __init__(
         self,
-        apps: list["PymordialApp"] | None = None,
+        apps: list[PymordialApp] | None = None,
     ):
         """Initializes the PymordialController.
 
         Args:
             apps: Optional list of PymordialApp instances to register immediately.
         """
-        self._apps: dict[str, "PymordialApp"] = {}
+        self._apps: dict[str, PymordialApp] = {}
 
         if apps:
             for app in apps:
@@ -46,9 +44,9 @@ class PymordialController(ABC):
     def _resolve_plugin(
         self,
         name: str,
-        default_factory: Callable[[], "PymordialPlugin"],
-        configure_found_plugin: Callable[["PymordialPlugin"], None] | None = None,
-    ) -> "PymordialPlugin":
+        default_factory: Callable[[], PymordialPlugin],
+        configure_found_plugin: Callable[[PymordialPlugin], None] | None = None,
+    ) -> PymordialPlugin:
         """Resolves a plugin from the registry or falls back to a default.
 
         Args:
@@ -61,7 +59,7 @@ class PymordialController(ABC):
         """
         pass
 
-    def __getattr__(self, name: str) -> "PymordialApp":
+    def __getattr__(self, name: str) -> PymordialApp:
         """Enables dot-notation access to registered apps.
 
         Args:
@@ -82,7 +80,7 @@ class PymordialController(ABC):
 
     # --- Convenience Methods (delegate to sub-controllers) ---
     ## --- App Management ---
-    def add_app(self, app: "PymordialApp") -> None:
+    def add_app(self, app: PymordialApp) -> None:
         """Registers a PymordialApp instance with this controller.
 
         This method adds the app to the internal registry using a sanitized name.
@@ -106,7 +104,7 @@ class PymordialController(ABC):
         return list(self._apps.keys())
 
     @property
-    def apps(self) -> dict[str, "PymordialApp"]:
+    def apps(self) -> dict[str, PymordialApp]:
         """Returns the dictionary of registered apps.
 
         Returns:
