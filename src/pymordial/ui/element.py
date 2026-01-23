@@ -5,7 +5,7 @@ from typing import final
 from uuid import uuid4
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, eq=False)
 class PymordialElement:
     """Abstract base class for all UI elements.
 
@@ -121,3 +121,13 @@ class PymordialElement:
                 int(self.position[1] + self.size[1] // 2),
             )
         return self.position
+
+    def __hash__(self) -> int:
+        """Returns hash based on unique element_id."""
+        return hash(self.element_id)
+
+    def __eq__(self, other) -> bool:
+        """Compares elements by their unique element_id."""
+        if not isinstance(other, PymordialElement):
+            return NotImplemented
+        return self.element_id == other.element_id

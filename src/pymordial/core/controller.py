@@ -89,9 +89,6 @@ class PymordialController(ABC):
 
         Args:
             app: The PymordialApp instance to register.
-
-        Raises:
-            ValueError: If the app name is invalid or conflicts (though current logic only overwrites, we can keep it simple or add check if needed, but existing logic overwrote).
         """
         # Sanitize app_name for attribute access
         sanitized_name = app.app_name.replace("-", "_").replace(" ", "_")
