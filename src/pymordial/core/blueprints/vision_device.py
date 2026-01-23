@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 from logging import DEBUG, basicConfig, getLogger
 
-from PIL import Image
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from PIL import Image
 
 
 class PymordialVisionDevice(ABC):
@@ -11,7 +14,7 @@ class PymordialVisionDevice(ABC):
     )
 
     @abstractmethod
-    def scale_img_to_screen(self) -> Image.Image:
+    def scale_img_to_screen(self) -> "Image.Image":
         pass
 
     @abstractmethod

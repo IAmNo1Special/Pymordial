@@ -5,13 +5,13 @@ from unittest.mock import patch
 from pymordial.utils.config import _deep_merge, get_config
 
 
-def test_get_config_returns_dict(mock_config):
+def test_get_config_returns_dict():
     """Test that get_config returns a dictionary."""
     config = get_config()
     assert isinstance(config, dict)
 
 
-def test_get_config_has_required_keys(mock_config):
+def test_get_config_has_required_keys():
     """Test that config has required keys."""
     config = get_config()
 

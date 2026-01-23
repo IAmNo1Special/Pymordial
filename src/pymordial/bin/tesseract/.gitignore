@@ -1,5 +1,0 @@
-# Ignore any potential log files or temporary artifacts
-*.log
-*.tmp
-
-# Keep everything else (runtime files are now the only things present)
