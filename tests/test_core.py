@@ -1,5 +1,7 @@
 """Tests for core abstract base classes and utilities."""
 
+from unittest.mock import MagicMock
+
 import pytest
 
 from pymordial.core.app import PymordialApp
@@ -49,6 +51,46 @@ class TestPymordialAppABC:
         assert "close" in abstract_methods
 
 
+class TestPymordialAppImplementation:
+    """Test a concrete implementation of PymordialApp (logic verification)."""
+
+    def test_app_lifecycle_delegation(self, mock_controller, app):
+        """Test full app lifecycle delegates to controller correctly."""
+        # 1. Registration
+        mock_controller.add_app(app)
+        assert app.pymordial_controller is mock_controller
+        assert "TestApp" in mock_controller.list_apps()
+
+        # 2. Open App delegation
+        mock_controller.open_app = MagicMock(return_value=True)
+        assert app.open() is True
+
+        mock_controller.open_app.assert_called_once()
+        args, kwargs = mock_controller.open_app.call_args
+        assert args[0] == "TestApp"
+        assert kwargs["package_name"] == "com.test.app"
+        assert app.app_state.current_state == AppState.LOADING
+
+        # 3. Close App delegation
+        # Manually transition to READY to allow closing (LOADING -> READY -> CLOSED)
+        app.app_state.transition_to(AppState.READY)
+        mock_controller.close_app = MagicMock(return_value=True)
+
+        assert app.close() is True
+
+        mock_controller.close_app.assert_called_once()
+        assert mock_controller.close_app.call_args[1]["package_name"] == "com.test.app"
+        assert app.app_state.current_state == AppState.CLOSED
+
+    def test_app_requires_controller(self, app):
+        """App methods raise ValueError if controller is missing."""
+        with pytest.raises(ValueError, match="controller is not initialized"):
+            app.open()
+
+        with pytest.raises(ValueError, match="controller is not initialized"):
+            app.close()
+
+
 class TestStateMachine:
     """Test StateMachine state transitions."""
 
@@ -96,4 +138,5 @@ class TestPymordialScreen:
         element = PymordialText(label="title", element_text="Play")
         screen.add_element(element)
         assert "title" in screen.elements
+        assert screen.elements["title"] is element
         assert screen.elements["title"] is element
