@@ -1,0 +1,92 @@
+import pytest
+
+from pymordial.core.app import PymordialApp
+from pymordial.core.controller import PymordialController
+from pymordial.core.state_machine import AppState
+
+
+class ConcreteController(PymordialController):
+    """Concrete implementation of PymordialController for testing."""
+
+    def _resolve_plugin(self, name, default_factory, configure_found_plugin=None):
+        return default_factory()
+
+    def capture_screen(self):
+        return None
+
+    def click_coord(self, coords, times=1):
+        return True
+
+    def click_element(self, element, times=1, screenshot=None, max_tries=1):
+        return True
+
+    def click_elements(self, elements, screenshot=None, max_tries=1):
+        return True
+
+    def find_element(self, element, screenshot=None, max_tries=1):
+        return (0, 0)
+
+    def is_element_visible(self, element, screenshot=None, max_tries=None):
+        return True
+
+    def open_app(self, app_name, package_name, timeout, wait_time):
+        return True
+
+    def close_app(self, package_name, timeout, wait_time):
+        return True
+
+    def read_text(self, image_path, case_sensitive=False, strategy=None):
+        return []
+
+    def check_text(self, text_to_find, image_path, case_sensitive=False, strategy=None):
+        return True
+
+
+class ConcreteApp(PymordialApp):
+    """Concrete implementation of PymordialApp for testing."""
+
+    def __init__(self, app_name: str, package_name: str):
+        super().__init__(app_name)
+        self.package_name = package_name
+
+    def _check_controller(self) -> None:
+        """Ensure implementation has a controller before operations."""
+        if not self.pymordial_controller:
+            raise ValueError(
+                f"{self.app_name}'s pymordial_controller is not initialized"
+            )
+
+    def open(self) -> bool:
+        self._check_controller()
+        # In a real impl, this would call controller specific methods
+        # Here we mock delegation to 'open_app' on the controller
+        result = self.pymordial_controller.open_app(
+            self.app_name,
+            package_name=self.package_name,
+            timeout=60,
+            wait_time=10,
+        )
+        if result:
+            self.app_state.transition_to(AppState.LOADING)
+        return result
+
+    def close(self) -> bool:
+        self._check_controller()
+        result = self.pymordial_controller.close_app(
+            package_name=self.package_name,
+            timeout=60,
+            wait_time=1,
+        )
+        if result:
+            self.app_state.transition_to(AppState.CLOSED)
+        return result
+
+
+@pytest.fixture
+def mock_controller():
+    return ConcreteController()
+
+
+@pytest.fixture
+def app():
+    return ConcreteApp("TestApp", "com.test.app")
