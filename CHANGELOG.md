@@ -12,9 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Converted `PymordialApp` to an Abstract Base Class (ABC).
     - Removed all Android-specific logical dependencies (package name, ADB commands) from core.
     - Cleaned `configs.yaml` of ADB/BlueStacks settings; now only contains generic `app`, `element`, `controller` config.
+    - Updated `PymordialElement` to default to 1920x1080 resolution if not specified, removing dependency on BlueStacks config.
+- **Configuration**:
+    - Updated `pymordial_config.example.yaml` to match the new minimal schema.
 - **Testing**:
     - Added rigorous testing for abstract base classes.
-    - Restored `ConcreteApp` fixtures to verified core lifecycle logic without platform dependencies.
+    - Restored `ConcreteApp` fixtures to verify core lifecycle logic without platform dependencies.
+- **Build**:
+    - Updated `uv-build` dependency constraints.
 
 ## [0.3.1] - 2026-01-21
 
