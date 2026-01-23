@@ -70,7 +70,7 @@ class PymordialElement(ABC):
 
         # Validate and set og_resolution
         if self.og_resolution is None:
-            self.og_resolution = tuple(_CONFIG["bluestacks"]["default_resolution"])
+            self.og_resolution = (1920, 1080)
         else:
             if not isinstance(self.og_resolution, tuple):
                 raise TypeError(
