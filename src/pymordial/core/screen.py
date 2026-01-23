@@ -7,7 +7,7 @@ from pymordial.ui.element import PymordialElement
 from pymordial.utils.exceptions import ElementNotFoundError
 
 
-@dataclass
+@dataclass(eq=False)
 class PymordialScreen:
     """Represents a screen within an application.
 
@@ -99,3 +99,13 @@ class PymordialScreen:
             raise ElementNotFoundError(
                 f"Element '{label}' not found on screen '{self.name}'"
             )
+
+    def __hash__(self) -> int:
+        """Returns hash based on unique screen_id."""
+        return hash(self.screen_id)
+
+    def __eq__(self, other) -> bool:
+        """Compares screens by their unique screen_id."""
+        if not isinstance(other, PymordialScreen):
+            return NotImplemented
+        return self.screen_id == other.screen_id

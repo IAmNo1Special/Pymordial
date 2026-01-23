@@ -81,10 +81,10 @@ class PymordialApp:
         """
         try:
             return self.screens[name]
-        except KeyError:
+        except KeyError as e:
             raise ScreenNotFoundError(
                 f"Screen '{name}' not found within the '{self.app_name}' app."
-            )
+            ) from e
 
     def remove_screen(self, name: str) -> PymordialScreen:
         """Removes a screen by its name.
@@ -100,10 +100,10 @@ class PymordialApp:
         """
         try:
             return self.screens.pop(name)
-        except KeyError:
+        except KeyError as e:
             raise ScreenNotFoundError(
                 f"Screen '{name}' not found within the '{self.app_name}' app."
-            )
+            ) from e
 
     def __hash__(self) -> int:
         """Returns hash based on unique app_id."""
