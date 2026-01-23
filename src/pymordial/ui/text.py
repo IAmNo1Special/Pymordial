@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from pymordial.core.blueprints.element import PymordialElement
 from pymordial.core.blueprints.extract_strategy import PymordialExtractStrategy
+from pymordial.ui.element import PymordialElement
 
 
 @dataclass(kw_only=True)
@@ -51,13 +51,3 @@ class PymordialText(PymordialElement):
                 raise TypeError(
                     f"Extract strategy must be a PymordialExtractStrategy, not {type(self.extract_strategy).__name__}"
                 )
-
-    def __repr__(self) -> str:
-        """Returns a string representation of the text element."""
-        return (
-            f"PymordialText("
-            f"label='{self.label}', "
-            f"element_text='{self.element_text}', "
-            f"position={self.position}, "
-            f"size={self.size})"
-        )

@@ -8,9 +8,9 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from pymordial.core.app import PymordialApp
-    from pymordial.core.blueprints.element import PymordialElement
     from pymordial.core.blueprints.extract_strategy import PymordialExtractStrategy
     from pymordial.core.plugin import PymordialPlugin
+    from pymordial.ui.element import PymordialElement
 
 logger = logging.getLogger(__name__)
 
@@ -85,27 +85,14 @@ class PymordialController(ABC):
     def add_app(self, app: "PymordialApp") -> None:
         """Registers a PymordialApp instance with this controller.
 
-        This method:
-        1. Checks if the app is already registered elsewhere.
-        2. Sets the app's `pymordial_controller` reference to `self`.
-        3. Adds the app to the internal registry using a sanitized name.
+        This method adds the app to the internal registry using a sanitized name.
 
         Args:
             app: The PymordialApp instance to register.
 
         Raises:
-            ValueError: If the app is already registered with a different controller.
+            ValueError: If the app name is invalid or conflicts (though current logic only overwrites, we can keep it simple or add check if needed, but existing logic overwrote).
         """
-        # Set controller reference if not set
-        if (
-            app.pymordial_controller is not None
-            and app.pymordial_controller is not self
-        ):
-            raise ValueError(
-                f"App '{app.app_name}' is already registered with a different controller."
-            )
-        app.pymordial_controller = self
-
         # Sanitize app_name for attribute access
         sanitized_name = app.app_name.replace("-", "_").replace(" ", "_")
 

@@ -1,9 +1,11 @@
+import logging
 from abc import ABC, abstractmethod
-from logging import DEBUG, basicConfig, getLogger
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 
 class PymordialVisionDevice(ABC):
@@ -12,11 +14,6 @@ class PymordialVisionDevice(ABC):
     Defines the contract for visual operations such as screen scaling,
     pixel color checking, and text extraction/finding.
     """
-
-    logger = getLogger("PymordialVisionDevice")
-    basicConfig(
-        level=DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
 
     @abstractmethod
     def scale_img_to_screen(self) -> "Image.Image":

@@ -1,8 +1,9 @@
 """Container for Pymordial UI elements representing a screen."""
 
 from dataclasses import dataclass, field
+from uuid import uuid4
 
-from pymordial.core.blueprints.element import PymordialElement
+from pymordial.ui.element import PymordialElement
 from pymordial.utils.exceptions import ElementNotFoundError
 
 
@@ -13,10 +14,12 @@ class PymordialScreen:
     Attributes:
         name: The name of the screen.
         elements: A dictionary of elements belonging to this screen.
+        screen_id: Unique identifier for this screen instance (auto-generated).
     """
 
     name: str
     elements: dict[str, PymordialElement] = field(default_factory=dict)
+    screen_id: str = field(default_factory=lambda: str(uuid4()), init=False)
 
     def __post_init__(self) -> None:
         """Validates the screen attributes after initialization.
@@ -96,11 +99,3 @@ class PymordialScreen:
             raise ElementNotFoundError(
                 f"Element '{label}' not found on screen '{self.name}'"
             )
-
-    def __repr__(self) -> str:
-        """Returns a string representation of the screen."""
-        return (
-            f"PymordialScreen("
-            f"name='{self.name}', "
-            f"elements={str(self.elements)})"
-        )

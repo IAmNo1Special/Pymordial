@@ -64,22 +64,21 @@ class MyPlatformController(PymordialController):
     # ... implement other abstract methods ...
 ```
 
-### 2. Implement an App
+### 2. Define an App
+
+`PymordialApp` is a **pure data model**. It holds app metadata and screens:
 
 ```python
 from pymordial.core.app import PymordialApp
+from pymordial.core.screen import PymordialScreen
+from pymordial.ui.image import PymordialImage
 
-class MyApp(PymordialApp):
-    """A concrete app implementation."""
-    
-    def open(self) -> bool:
-        print(f"Launching {self.app_name}...")
-        # device_bridge.launch(self.package_id)
-        return True
+# Create an app with screens and elements
+main_menu = PymordialScreen(name="main_menu")
+main_menu.add_element(PymordialImage(label="play_button", source_path="assets/play.png"))
 
-    def close(self) -> bool:
-        print(f"Closing {self.app_name}...")
-        return True
+game = PymordialApp(app_name="SuperGame")
+game.add_screen(main_menu)
 ```
 
 ### 3. Automate!
@@ -89,17 +88,15 @@ Once implemented, you get the full power of Pymordial's state machine and elemen
 ```python
 # 1. Setup
 controller = MyPlatformController()
-game = MyApp("SuperGame", package_id="com.game")
-controller.add_app(game)
+controller.add_app(game)  # Register the app
 
-# 2. Define Elements
-from pymordial.ui.image import PymordialImage
-start_btn = PymordialImage("start", "assets/start.png")
+# 2. Operate via Controller (which delegates to BridgeDevice)
+controller.open_app("SuperGame", "com.game", timeout=60, wait_time=10)
 
-# 3. Operations
-game.open()
-if controller.is_element_visible(start_btn):
-    controller.click_element(start_btn)
+# 3. Find and Click Elements
+play_button = game.get_screen("main_menu").get_element("play_button")
+if controller.is_element_visible(play_button):
+    controller.click_element(play_button)
 ```
 
 ---
