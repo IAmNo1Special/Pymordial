@@ -1,11 +1,16 @@
+# --- PymordialApp Settings ---
 app:
   action_timeout: 60
   action_wait_time: 10
   ready_check_max_tries: 3
   close_wait_time: 1
+
+# --- Element Settings ---
 element:
   default_confidence: 0.7
   pixel_size: [1, 1]
+
+# --- Controller Settings ---
 controller:
   default_click_times: 1
   default_max_tries: 2
