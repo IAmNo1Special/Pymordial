@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
-from pymordial.core.app import AppState
 from pymordial.core.controller import PymordialController
+from pymordial.core.state_machine import AppState
 
 
 def test_controller_instantiation_and_app_lifecycle(mock_controller, app):
@@ -39,9 +39,6 @@ def test_controller_instantiation_and_app_lifecycle(mock_controller, app):
 
     # Verify delegation
     mock_controller.close_app.assert_called_once()
-    assert mock_controller.close_app.call_args[1]["package_name"] == "com.test.app"
-
-    assert app.app_state.current_state == AppState.CLOSED
     assert mock_controller.close_app.call_args[1]["package_name"] == "com.test.app"
 
     assert app.app_state.current_state == AppState.CLOSED

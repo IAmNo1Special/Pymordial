@@ -1,60 +1,3 @@
-adb:
-  default_host: "127.0.0.1"
-  default_port: 5555
-  default_max_retries: 3
-  default_wait_time: 1
-  app_start_timeout: 60
-  stream:
-    resolution: 1920
-    bitrate: "4M"
-    time_limit: 180
-    queue_size: 100
-    read_timeout: 1.0
-    start_timeout_iterations: 100
-    start_wait: 0.1
-    stop_timeout: 2
-  monkey_verbosity: 1
-  app_check_retries: 20
-  keyevents:
-    home: 3
-    enter: 66
-    esc: 4
-    app_switch: "KEYCODE_APP_SWITCH"
-  commands:
-    timeout: 30
-    read_timeout: 30
-    transport_timeout: 30
-    screenrecord: "screenrecord --output-format=h264 --size {width}x{height} --bit-rate {bitrate} --time-limit {time_limit} -"
-    dumpsys_focus: "dumpsys window windows | grep -E 'mCurrentFocus' | grep {package_name}"
-    force_stop: "am force-stop {package_name}"
-    screencap: "screencap -p"
-    tap: "input tap {x} {y}"
-    text: "input text {text}"
-    keyevent: "input keyevent {keycode}"
-    monkey: "monkey -p {package_name} -v {verbosity}"
-bluestacks:
-  default_resolution: [1920, 1080]
-  default_open_app_max_retries: 5
-  default_open_app_wait_time: 1
-  default_open_app_timeout: 30
-  default_transport_timeout_s: 60.0
-  default_process_kill_timeout: 10
-  default_load_wait_time: 1
-  default_load_timeout: 60
-  default_ui_load_wait_time: 10
-  hd_player_exe: "HD-Player.exe"
-  window_title: "Bluestacks App Player"
-  ui:
-    store_search_input_label: "bluestacks_store_search_input"
-    store_search_text: "Search for games & apps"
-    store_button_label: "bluestacks_store_button"
-
-    assets:
-      store_search_input: "bluestacks_store_search_input.png"
-      store_button: "bluestacks_store_button.png"
-image_controller:
-  default_wait_time: 1
-  default_find_ui_retries: 2
 app:
   action_timeout: 60
   action_wait_time: 10
@@ -63,47 +6,6 @@ app:
 element:
   default_confidence: 0.7
   pixel_size: [1, 1]
-extract_strategy:
-  default:
-    upscale_factor: 2
-    denoise_strength: 5
-    denoise_template_window: 7
-    denoise_search_window: 21
-    threshold_binary_max: 255
-    inversion_threshold_mean: 127
-    tesseract_config: "--oem 3 --psm 6"
-  revomon:
-    move:
-      upscale_factor: 3
-      crop_left_ratio: 0.42
-      crop_bottom_ratio: 0.23
-      padding: 40
-      whitelist_config: "-c tessedit_char_whitelist=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    level:
-      crop_left_ratio: 0.30
-      whitelist_config: "-c tessedit_char_whitelist=0123456789"
-    padding_value_white: 255
-    adaptive_thresh_block_size: 11
-    adaptive_thresh_c: 2
-  tesseract:
-    base_config: "--oem 3"
-    default_config: "--oem 3 --psm 6"
-    tesseract_cmd: "tesseract"
-    preprocess:
-      upscale_factor: 2
-      denoise_strength: 10
-      denoise_template_window: 7
-      denoise_search_window: 21
-      threshold_max: 255
-      inversion_threshold: 127
-    psm:
-      single_word: "8"
-      single_line: "7"
-      block: "6"
-setup:
-  installer_name: "BlueStacksInstaller.exe"
-  download_url: "https://cloud.bluestacks.com/api/getdownloadnow?platform=win&win_arch=64&main_program=app_player"
-  reg_key: "SOFTWARE\\BlueStacks_nxt"
 controller:
   default_click_times: 1
   default_max_tries: 2

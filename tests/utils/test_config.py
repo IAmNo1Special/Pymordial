@@ -15,8 +15,8 @@ def test_get_config_has_required_keys():
     """Test that config has required keys."""
     config = get_config()
 
-    assert "adb" in config
-    assert "bluestacks" in config
+    assert "app" in config
+    assert "element" in config
     assert "controller" in config
 
 

@@ -21,142 +21,16 @@ _USER_CONFIG_PATH = _PROJECT_ROOT / "pymordial_config.yaml"
 _CONFIG = None
 
 
-class AdbStreamConfig(TypedDict):
-    resolution: int
-    bitrate: str
-    time_limit: int
-    queue_size: int
-    read_timeout: float
-    start_timeout_iterations: int
-    start_wait: float
-    stop_timeout: int
-
-
-class AdbKeyEventsConfig(TypedDict):
-    home: int
-    enter: int
-    esc: int
-    app_switch: str
-
-
-class AdbCommandsConfig(TypedDict):
-    screenrecord: str
-    dumpsys_focus: str
-    force_stop: str
-    screencap: str
-    tap: str
-    text: str
-    keyevent: str
-    monkey: str
-
-
-class AdbConfig(TypedDict):
-    default_ip: str
-    default_port: int
-    default_max_retries: int
-    default_wait_time: int
-    default_timeout: int
-    process_wait_timeout: int
-    app_start_timeout: int
-    stream: AdbStreamConfig
-    monkey_verbosity: int
-    app_check_retries: int
-    keyevents: AdbKeyEventsConfig
-    commands: AdbCommandsConfig
-
-
-class BluestacksConfig(TypedDict):
-    default_resolution: list[int]
-    default_open_app_max_retries: int
-    default_open_app_wait_time: int
-    default_open_app_timeout: int
-    default_transport_timeout_s: float
-    default_load_timeout: int
-    default_load_wait_time: int
-    default_ui_load_wait_time: int
-    hd_player_exe: str
-    window_title: str
-
-
-class VisionConfig(TypedDict):
-    default_wait_time: int
-    default_find_ui_retries: int
-
-
 class AppConfig(TypedDict):
     action_timeout: int
     action_wait_time: int
+    ready_check_max_tries: int
+    close_wait_time: int
 
 
 class ElementConfig(TypedDict):
     default_confidence: float
     pixel_size: list[int]
-
-
-class ExtractStrategyDefaultConfig(TypedDict):
-    upscale_factor: int
-    denoise_strength: int
-    denoise_template_window: int
-    denoise_search_window: int
-    threshold_binary_max: int
-    inversion_threshold_mean: int
-    tesseract_config: str
-
-
-class RevomonMoveConfig(TypedDict):
-    upscale_factor: int
-    crop_left_ratio: float
-    crop_bottom_ratio: float
-    padding: int
-    whitelist_config: str
-
-
-class RevomonLevelConfig(TypedDict):
-    crop_left_ratio: float
-    whitelist_config: str
-
-
-class RevomonConfig(TypedDict):
-    move: RevomonMoveConfig
-    level: RevomonLevelConfig
-    padding_value_white: int
-    adaptive_thresh_block_size: int
-    adaptive_thresh_c: int
-
-
-class TesseractPsmConfig(TypedDict):
-    single_word: str
-    single_line: str
-    block: str
-
-
-class TesseractPreprocessConfig(TypedDict):
-    upscale_factor: int
-    denoise_strength: int
-    denoise_template_window: int
-    denoise_search_window: int
-    threshold_max: int
-    inversion_threshold: int
-
-
-class TesseractConfig(TypedDict):
-    base_config: str
-    default_config: str
-    tesseract_cmd: str
-    preprocess: TesseractPreprocessConfig
-    psm: TesseractPsmConfig
-
-
-class ExtractStrategyConfig(TypedDict):
-    default: ExtractStrategyDefaultConfig
-    revomon: RevomonConfig
-    tesseract: TesseractConfig
-
-
-class SetupConfig(TypedDict):
-    installer_name: str
-    download_url: str
-    reg_key: str
 
 
 class ControllerConfig(TypedDict):
@@ -166,13 +40,8 @@ class ControllerConfig(TypedDict):
 
 
 class PymordialConfig(TypedDict):
-    adb: AdbConfig
-    bluestacks: BluestacksConfig
-    image_controller: VisionConfig
     app: AppConfig
     element: ElementConfig
-    extract_strategy: ExtractStrategyConfig
-    setup: SetupConfig
     controller: ControllerConfig
 
 
@@ -185,27 +54,10 @@ def _validate_config(config: dict) -> None:
     Raises:
         ValueError: If a required key is missing.
     """
-    required_keys = [
-        "adb",
-        "bluestacks",
-        "image_controller",
-        "app",
-        "element",
-        "extract_strategy",
-        "setup",
-        "controller",
-    ]
+    required_keys = ["app", "element", "controller"]
     for key in required_keys:
         if key not in config:
             raise ValueError(f"Missing required config section: {key}")
-
-    # Basic nested validation (can be expanded)
-    if "ui" not in config["bluestacks"]:
-        raise ValueError("Missing required config section: bluestacks.ui")
-    if "commands" not in config["adb"]:
-        raise ValueError("Missing required config section: adb.commands")
-    if "assets" not in config["bluestacks"]["ui"]:
-        raise ValueError("Missing required config section: bluestacks.ui.assets")
 
 
 def _load_config() -> PymordialConfig:

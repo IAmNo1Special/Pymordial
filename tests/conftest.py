@@ -41,6 +41,47 @@ class ConcreteController(PymordialController):
         return True
 
 
+class ConcreteApp(PymordialApp):
+    """Concrete implementation of PymordialApp for testing."""
+
+    def __init__(self, app_name: str, package_name: str):
+        super().__init__(app_name)
+        self.package_name = package_name
+
+    def open(self) -> bool:
+        if not self.pymordial_controller:
+            raise ValueError(
+                f"{self.app_name}'s pymordial_controller is not initialized"
+            )
+        from pymordial.core.state_machine import AppState
+
+        result = self.pymordial_controller.open_app(
+            self.app_name,
+            package_name=self.package_name,
+            timeout=60,
+            wait_time=10,
+        )
+        if result:
+            self.app_state.transition_to(AppState.LOADING)
+        return result
+
+    def close(self) -> bool:
+        if not self.pymordial_controller:
+            raise ValueError(
+                f"{self.app_name}'s pymordial_controller is not initialized"
+            )
+        from pymordial.core.state_machine import AppState
+
+        result = self.pymordial_controller.close_app(
+            package_name=self.package_name,
+            timeout=60,
+            wait_time=1,
+        )
+        if result:
+            self.app_state.transition_to(AppState.CLOSED)
+        return result
+
+
 @pytest.fixture
 def mock_controller():
     return ConcreteController()
@@ -48,4 +89,4 @@ def mock_controller():
 
 @pytest.fixture
 def app():
-    return PymordialApp("TestApp", "com.test.app")
+    return ConcreteApp("TestApp", "com.test.app")
