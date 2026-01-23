@@ -6,211 +6,130 @@
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI](https://img.shields.io/pypi/v/pymordial)](https://pypi.org/project/pymordial/)
 
-Pymordial is an extensible automation framework designed to support any platform (Android, iOS, Windows, etc.). Currently, it features complete **end-to-end support for BlueStacks 5**, utilizing ADB (Android Debug Bridge) for device control and a unified vision system for UI interaction.
+Pymordial is a platform-agnostic automation framework that provides a standardized interface for controlling applications on any device. It defines the core contracts (`Controller`, `App`, `Device`) that allow you to build robust, state-aware automation tools for Android, iOS, Windows, or Web.
+
+> **Note:** This is the core framework. For Android/BlueStacks implementation, see [pymordialblue](https://github.com/IAmNo1Special/pymordialblue) (Coming Soon).
 
 ---
 
-## Key Features
+## 🏗️ Architecture
 
-- **Platform Agnostic Design**: Built to support custom device implementations.
-- **BlueStacks Integration**: Native support for **BlueStacks 5** (launch, kill, lifecycle management) included out-of-the-box.
-- **Pure Python ADB**: Uses `adb-shell` for direct communication without requiring a system ADB installation.
-- **High-Performance Streaming**: Implements H.264 screen capture streaming for low-latency visual feedback.
-- **Unified Vision System**: Seamlessly find and interact with:
-    - **Images**: Template matching with confidence thresholds.
-    - **Text**: OCR powered by Tesseract.
-    - **Pixels**: Precise color verification with tolerance.
-- **App Lifecycle Management**: Robust `StateMachine` (CLOSED → LOADING → READY) for app stability.
-- **Type-Safe Configuration**: Strictly typed configuration system via `TypedDict`.
+Pymordial provides the **Blueprints** for automation:
 
----
-
-## Prerequisites
-
-- **BlueStacks 5**: Installed on Windows (Hyper-V, Nougat, Pie, or Android 11 instances supported).
-- **Enable ADB**: Enable "Android Debug Bridge" in BlueStacks Settings > Advanced.
-- **Python 3.13+**: Ensure you have a modern Python version installed.
+- **`PymordialController`**: The brain. Manages devices, apps, and user inputs (clicks, swipes, text).
+- **`PymordialApp`**: The soul. A robust `StateMachine` (CLOSED → LOADING → READY) that tracks app lifecycle.
+- **`PymordialElement`**: The eyes. Unified interface for finding UI components via:
+    - **Images** (Template Matching)
+    - **Text** (OCR)
+    - **Pixels** (Color Arrays)
+- **`PymordialDevice`**: The body. Abstract interfaces for emulators, bridges (ADB/Win32), and screen processing.
 
 ---
 
-## Installation
-
-We recommend using [uv](https://github.com/astral-sh/uv) for dependency management.
+## 📦 Installation
 
 ```bash
 uv add pymordial
 ```
 
-Alternatively, you can use pip:
+Or using pip:
 
 ```bash
 pip install pymordial
 ```
 
-### Setup BlueStacks
+---
 
-If you don't have BlueStacks installed, you can use the included setup script:
+## 🚀 Quick Start: Building a Controller
 
-```bash
-uv run src/pymordial/scripts/setup_bluestacks.py
+Pymordial is designed to be extended. Here is how you implement a simple controller for a hypothetical platform.
+
+### 1. Implement the Controller
+
+```python
+from pymordial.core.controller import PymordialController
+
+class MyPlatformController(PymordialController):
+    """A concrete implementation for MyPlatform."""
+    
+    def click_coord(self, coords, times=1):
+        print(f"Clicking {coords} {times} times on target device...")
+        # device_bridge.send_click(coords)
+        return True
+
+    def capture_screen(self):
+        # return device_bridge.get_screenshot()
+        pass
+        
+    # ... implement other abstract methods ...
+```
+
+### 2. Implement an App
+
+```python
+from pymordial.core.app import PymordialApp
+
+class MyApp(PymordialApp):
+    """A concrete app implementation."""
+    
+    def open(self) -> bool:
+        print(f"Launching {self.app_name}...")
+        # device_bridge.launch(self.package_id)
+        return True
+
+    def close(self) -> bool:
+        print(f"Closing {self.app_name}...")
+        return True
+```
+
+### 3. Automate!
+
+Once implemented, you get the full power of Pymordial's state machine and element system.
+
+```python
+# 1. Setup
+controller = MyPlatformController()
+game = MyApp("SuperGame", package_id="com.game")
+controller.add_app(game)
+
+# 2. Define Elements
+from pymordial.ui.image import PymordialImage
+start_btn = PymordialImage("start", "assets/start.png")
+
+# 3. Operations
+game.open()
+if controller.is_element_visible(start_btn):
+    controller.click_element(start_btn)
 ```
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
-Pymordial uses a sensible default configuration suitable for most use cases. To override these settings, create a `pymordial_config.yaml` file in your project root.
-
-**Example `pymordial_config.yaml`:**
+The core library uses a strictly typed, minimal configuration:
 
 ```yaml
-adb:
-  default_host: "127.0.0.1"
-  default_port: 5555
-  stream:
-    resolution: 1024  # Stream width
-
-bluestacks:
-  resolution: [1920, 1080]  # Target resolution for scaling
-
+# pymordial_config.yaml
 app:
-  action_timeout: 45
+  action_timeout: 60
+  action_wait_time: 10
+
+element:
+  default_confidence: 0.7
+
+controller:
+  default_click_times: 1
 ```
 
 ---
 
-## Quick Start
-
-### 1. Connect and Verify
-
-Create a `PymordialController` to manage the connection.
-
-```python
-from pymordial import PymordialController
-
-# Initialize controller (auto-connects to default ADB host/port)
-controller = PymordialController()
-
-# Check Device Status
-if controller.bluestacks.is_ready():
-    print("✅ BlueStacks is ready")
-else:
-    print("⏳ Launching BlueStacks...")
-    controller.bluestacks.open()
-
-if controller.adb.is_connected():
-    print("✅ ADB Connected")
-```
-
-### 2. Define UI Elements
-
-Define the elements you want to interact with using `PymordialImage`, `PymordialText`, or `PymordialPixel`.
-
-```python
-from pymordial import PymordialImage, PymordialPixel, PymordialText
-from pathlib import Path
-
-# Image Element (Template Matching)
-start_button = PymordialImage(
-    label="start_button",
-    filepath=Path(__file__).parent / "assets/start_btn.png",
-    confidence=0.8,
-    og_resolution=(1920, 1080),  # Resolution where asset was captured
-)
-
-# Text Element (OCR)
-level_text = PymordialText(
-    label="level_indicator",
-    element_text="Level 1",
-)
-
-# Pixel Element (Color Check)
-health_bar = PymordialPixel(
-    label="full_health",
-    position=(100, 50),
-    pixel_color=(0, 255, 0),
-    tolerance=10,
-)
-```
-
-### 3. Interacting with Elements
-
-Use the controller to find, click, or read elements.
-
-```python
-# Check visibility
-if controller.is_element_visible(start_button):
-    print("Start button found!")
-    
-    # Click element
-    controller.click_element(start_button)
-
-# Find coordinates directly
-coords = controller.find_element(health_bar)
-if coords:
-    print(f"Health bar at: {coords}")
-
-# Read text from screen
-text_lines = controller.read_text(controller.capture_screen())
-print("Screen text:", text_lines)
-```
-
-### 4. Managing App Lifecycle
-
-Use `PymordialApp` to robustly manage application state.
-
-```python
-from pymordial import PymordialApp
-
-# Define an app with a "ready marker"
-my_game = PymordialApp(
-    app_name="MyGame",
-    package_name="com.example.mygame",
-    ready_element=start_button,  # App is 'READY' when this is visible
-)
-
-# Register app with controller
-controller.add_app(my_game)
-
-# Open app and wait for it to be ready
-controller.my_game.open()
-
-if controller.my_game.is_open():
-    print("App represents: READY state")
-```
-
----
-
-## Architecture Overview
-
-The system is organized into a clean implementation hierarchy:
-
-```
-PymordialController
-├── adb (PymordialAdbDevice)
-│   ├── AdbShell (Bridge)
-│   ├── Streaming (H.264 -> PyAV)
-│   └── Input (Tap, Swipe, Text)
-│
-├── bluestacks (PymordialBluestacksDevice)
-│   ├── Process Management
-│   └── Lifecycle Control
-│
-└── ui (PymordialUiDevice)
-    ├── Vision Strategy (OpenCV)
-    ├── OCR Engine (Tesseract)
-    └── Matching Logic (Image/Pixel/Text)
-```
-
----
-
-## Contributing
+## 🤝 Contributing
 
 1.  Fork the repository.
 2.  Create a feature branch.
 3.  Commit your changes (please follow PEP 8).
 4.  Submit a Pull Request.
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
