@@ -27,7 +27,12 @@ class EmulatorState(Enum):
 
 
 class PymordialEmulatorDevice(ABC):
-    """Interface for emulators."""
+    """Abstract interface for controlling emulator software (e.g., BlueStacks).
+
+    Attributes:
+        logger: Logger instance for emulator operations.
+        state: StateMachine tracking the emulator's lifecycle.
+    """
 
     logger = getLogger("PymordialEmulatorDevice")
     state = StateMachine(
@@ -40,20 +45,36 @@ class PymordialEmulatorDevice(ABC):
 
     @abstractmethod
     def open(self):
-        """Opens the emulator."""
+        """Opens the emulator software.
+
+        Returns:
+            True if the launch command was successful, False otherwise.
+        """
         pass
 
     @abstractmethod
     def wait_for_load(self):
-        """Waits for the emulator to load."""
+        """Waits for the emulator to reach a ready state.
+
+        Returns:
+            True if proper loading was detected within timeout, False otherwise.
+        """
         pass
 
     @abstractmethod
     def is_ready(self):
-        """Checks if the emulator is ready."""
+        """Checks if the emulator is currently ready to accept commands.
+
+        Returns:
+            True if the emulator is ready, False otherwise.
+        """
         pass
 
     @abstractmethod
     def close(self):
-        """Closes the emulator."""
+        """Closes or terminates the emulator software.
+
+        Returns:
+            True if the close command was successful, False otherwise.
+        """
         pass

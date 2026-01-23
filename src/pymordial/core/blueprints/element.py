@@ -30,7 +30,13 @@ class PymordialElement(ABC):
     og_resolution: tuple[int, int] | None = None
 
     def __post_init__(self):
-        """Post-initialization processing and validation."""
+        """Post-initialization processing and validation.
+
+        Raises:
+            TypeError: If label, position, size, or og_resolution types are invalid.
+            ValueError: If label is empty, or if numeric values (position, size, resolution)
+                are invalid (negative, zero, wrong length).
+        """
         # Validate label
         if not isinstance(self.label, str):
             raise TypeError(f"Label must be a string, not {type(self.label).__name__}")
@@ -90,26 +96,36 @@ class PymordialElement(ABC):
     @property
     @final
     def region(self) -> tuple[int, int, int, int] | None:
-        """Returns (left, top, right, bottom) if position and size are set."""
+        """Calculates the bounding box region.
+
+        Returns:
+            A tuple of (left, top, right, bottom) if position and size are set,
+            otherwise None.
+        """
         if self.position and self.size:
             return (
-                self.position[0],
-                self.position[1],
-                self.position[0] + self.size[0],
-                self.position[1] + self.size[1],
+                int(self.position[0]),
+                int(self.position[1]),
+                int(self.position[0] + self.size[0]),
+                int(self.position[1] + self.size[1]),
             )
         return None
 
     @property
     @final
     def center(self) -> tuple[int, int] | None:
-        """Returns (x, y) center coordinates if position and size are set."""
+        """Calculates the center coordinates.
+
+        Returns:
+            A tuple of (x, y) coordinates representing the center point if
+            position and size are set, otherwise returns the position itself.
+        """
         if self.position and self.size:
             return (
-                self.position[0] + self.size[0] // 2,
-                self.position[1] + self.size[1] // 2,
+                int(self.position[0] + self.size[0] // 2),
+                int(self.position[1] + self.size[1] // 2),
             )
-        return self.position
+        return self.position  # type: ignore
 
     def __hash__(self) -> int:
         """Returns hash based on unique ID."""

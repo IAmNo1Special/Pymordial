@@ -27,7 +27,12 @@ class PymordialPixel(PymordialElement):
     size: tuple[int | float, int | float] = field(init=False)
 
     def __post_init__(self):
-        """Post-initialization processing and validation."""
+        """Post-initialization processing and validation.
+
+        Raises:
+            TypeError: If pixel_color is not a tuple of integers, or tolerance is not an integer.
+            ValueError: If pixel_color is not (r,g,b), contains values outside 0-255, or if tolerance is invalid.
+        """
         # Override parent's size to always be PIXEL_SIZE from config
         self.size = tuple(_CONFIG["element"]["pixel_size"])
         super().__post_init__()

@@ -18,8 +18,13 @@ logger = logging.getLogger(__name__)
 class PymordialController(ABC):
     """Abstract base controller that orchestrates device interaction.
 
-    Attribute:
-        apps: Dictionary of registered PymordialApp instances.
+    The controller acts as the central coordinator for:
+    - Managing registered applications (`PymordialApp`).
+    - Delegating UI interactions (clicks, finds, text reading) to the device.
+    - Handling plugin resolution.
+
+    Attributes:
+        apps: Dictionary of registered PymordialApp instances, keyed by sanitized name.
     """
 
     def __init__(
@@ -29,7 +34,7 @@ class PymordialController(ABC):
         """Initializes the PymordialController.
 
         Args:
-            apps: Optional list of PymordialApp instances to register.
+            apps: Optional list of PymordialApp instances to register immediately.
         """
         self._apps: dict[str, "PymordialApp"] = {}
 
@@ -44,11 +49,30 @@ class PymordialController(ABC):
         default_factory: Callable[[], "PymordialPlugin"],
         configure_found_plugin: Callable[["PymordialPlugin"], None] | None = None,
     ) -> "PymordialPlugin":
-        """Resolves a plugin from the registry or falls back to a default."""
+        """Resolves a plugin from the registry or falls back to a default.
+
+        Args:
+            name: The name of the plugin to look up.
+            default_factory: Factory function to create a default instance if not found.
+            configure_found_plugin: Optional callback to configure the plugin if found.
+
+        Returns:
+            The resolved or default plugin instance.
+        """
         pass
 
     def __getattr__(self, name: str) -> "PymordialApp":
-        """Enables dot-notation access to registered apps."""
+        """Enables dot-notation access to registered apps.
+
+        Args:
+            name: The name of the app to retrieve (sanitized).
+
+        Returns:
+            The registered PymordialApp instance.
+
+        Raises:
+            AttributeError: If the app name is not registered.
+        """
         if name in self._apps:
             return self._apps[name]
         raise AttributeError(
@@ -59,7 +83,19 @@ class PymordialController(ABC):
     # --- Convenience Methods (delegate to sub-controllers) ---
     ## --- App Management ---
     def add_app(self, app: "PymordialApp") -> None:
-        """Registers a PymordialApp instance with this controller."""
+        """Registers a PymordialApp instance with this controller.
+
+        This method:
+        1. Checks if the app is already registered elsewhere.
+        2. Sets the app's `pymordial_controller` reference to `self`.
+        3. Adds the app to the internal registry using a sanitized name.
+
+        Args:
+            app: The PymordialApp instance to register.
+
+        Raises:
+            ValueError: If the app is already registered with a different controller.
+        """
         # Set controller reference if not set
         if (
             app.pymordial_controller is not None
@@ -77,23 +113,43 @@ class PymordialController(ABC):
         self._apps[sanitized_name] = app
 
     def list_apps(self) -> list[str]:
-        """Returns a list of registered app names."""
+        """Returns a list of registered app names.
+
+        Returns:
+            A list of strings representing the names of registered apps.
+        """
         return list(self._apps.keys())
 
     @property
     def apps(self) -> dict[str, "PymordialApp"]:
-        """Returns the dictionary of registered apps."""
+        """Returns the dictionary of registered apps.
+
+        Returns:
+            A dictionary mapping sanitized app names to PymordialApp instances.
+        """
         return self._apps
 
     @abstractmethod
     def capture_screen(self) -> bytes | None:
-        """Captures the current screen."""
+        """Captures the current screen.
+
+        Returns:
+            The raw image bytes of the screenshot, or None if capture failed.
+        """
         pass
 
     # --- Click Methods ---
     @abstractmethod
     def click_coord(self, coords: tuple[int, int], times: int = 1) -> bool:
-        """Clicks specific coordinates on the screen."""
+        """Clicks specific coordinates on the screen.
+
+        Args:
+            coords: A tuple of (x, y) integer coordinates.
+            times: The number of times to click. Defaults to 1.
+
+        Returns:
+            True if the click action was successful, False otherwise.
+        """
         pass
 
     @abstractmethod
@@ -104,7 +160,17 @@ class PymordialController(ABC):
         screenshot_img_bytes: bytes | None = None,
         max_tries: int = 1,
     ) -> bool:
-        """Clicks a UI element on the screen."""
+        """Clicks a UI element on the screen.
+
+        Args:
+            pymordial_element: The element blueprint to find and click.
+            times: The number of times to click. Defaults to 1.
+            screenshot_img_bytes: Optional pre-captured screenshot to optimize finding.
+            max_tries: Maximum number of attempts to find the element. Defaults to 1.
+
+        Returns:
+            True if the element was found and clicked, False otherwise.
+        """
         pass
 
     @abstractmethod
@@ -114,7 +180,18 @@ class PymordialController(ABC):
         screenshot_img_bytes: bytes | None = None,
         max_tries: int = 1,
     ) -> bool:
-        """Clicks any of the elements in the list."""
+        """Clicks any of the elements in the list.
+
+        Iterates through the list and clicks the first element found.
+
+        Args:
+            pymordial_elements: List of element blueprints to search for.
+            screenshot_img_bytes: Optional pre-captured screenshot.
+            max_tries: Maximum attempts to find any element.
+
+        Returns:
+            True if any element from the list was clicked, False otherwise.
+        """
         pass
 
     @abstractmethod
@@ -124,7 +201,16 @@ class PymordialController(ABC):
         pymordial_screenshot: bytes | None = None,
         max_tries: int = 1,
     ) -> tuple[int, int] | None:
-        """Finds the coordinates of a UI element on the screen."""
+        """Finds the coordinates of a UI element on the screen.
+
+        Args:
+            pymordial_element: The element blueprint to search for.
+            pymordial_screenshot: Optional pre-captured screenshot.
+            max_tries: Maximum number of search attempts. Defaults to 1.
+
+        Returns:
+            A tuple of (x, y) coordinates if found, None otherwise.
+        """
         pass
 
     @abstractmethod
@@ -134,7 +220,16 @@ class PymordialController(ABC):
         pymordial_screenshot: bytes | None = None,
         max_tries: int | None = None,
     ) -> bool:
-        """Checks if a UI element is visible on the screen."""
+        """Checks if a UI element is visible on the screen.
+
+        Args:
+            pymordial_element: The element blueprint to check.
+            pymordial_screenshot: Optional pre-captured screenshot.
+            max_tries: Maximum number of checks. If None, defaults to 1.
+
+        Returns:
+            True if the element is visible, False otherwise.
+        """
         pass
 
     # --- App Lifecycle Methods ---
@@ -146,7 +241,17 @@ class PymordialController(ABC):
         timeout: int,
         wait_time: int,
     ) -> bool:
-        """Opens an app on the device."""
+        """Opens an app on the device.
+
+        Args:
+            app_name: The display name of the app.
+            package_name: The platform-specific package identifier (e.g. bundle ID).
+            timeout: Maximum seconds to wait for launch.
+            wait_time: Seconds to wait after launch command.
+
+        Returns:
+            True if the app launched successfully, False otherwise.
+        """
         pass
 
     @abstractmethod
@@ -156,7 +261,16 @@ class PymordialController(ABC):
         timeout: int,
         wait_time: int,
     ) -> bool:
-        """Closes an app on the device."""
+        """Closes an app on the device.
+
+        Args:
+            package_name: The platform-specific package identifier.
+            timeout: Maximum seconds to wait for closure.
+            wait_time: Seconds to wait after close command.
+
+        Returns:
+            True if the app closed successfully, False otherwise.
+        """
         pass
 
     @abstractmethod
@@ -166,7 +280,16 @@ class PymordialController(ABC):
         case_sensitive: bool = False,
         strategy: "PymordialExtractStrategy | None" = None,
     ) -> list[str]:
-        """Read text from an image using OCR."""
+        """Read text from an image using OCR.
+
+        Args:
+            image_path: Path to image file, raw bytes, or base64 string.
+            case_sensitive: Whether OCR should respect case. Defaults to False.
+            strategy: Optional extraction strategy to preprocess image.
+
+        Returns:
+            A list of strings containing the read text lines.
+        """
         pass
 
     @abstractmethod
@@ -177,7 +300,17 @@ class PymordialController(ABC):
         case_sensitive: bool = False,
         strategy: "PymordialExtractStrategy | None" = None,
     ) -> bool:
-        """Check if specific text exists in an image."""
+        """Check if specific text exists in an image.
+
+        Args:
+            text_to_find: The string to search for.
+            image_path: Path to image file, raw bytes, or base64 string.
+            case_sensitive: Whether to perform case-sensitive matching.
+            strategy: Optional extraction strategy.
+
+        Returns:
+            True if the text is found, False otherwise.
+        """
         pass
 
     def __repr__(self) -> str:

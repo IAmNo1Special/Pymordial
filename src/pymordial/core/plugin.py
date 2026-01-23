@@ -12,6 +12,10 @@ class PymordialPlugin(Protocol):
 
     Plugins are the mechanism for extending Pymordial with new device types,
     controllers, or utilities.
+
+    Attributes:
+        name: A unique identifier for the plugin.
+        version: Semantic version string of the plugin.
     """
 
     name: str
