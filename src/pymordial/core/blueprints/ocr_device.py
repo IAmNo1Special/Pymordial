@@ -41,7 +41,9 @@ class PymordialOCRDevice(ABC):
         """
         pass
 
-    def contains_text(self, search_text: str, image_path:Path | bytes | str | Any) -> bool:
+    def contains_text(
+        self, search_text: str, image_path: Path | bytes | str | Any
+    ) -> bool:
         """Checks if image contains specific text.
 
         Args:
