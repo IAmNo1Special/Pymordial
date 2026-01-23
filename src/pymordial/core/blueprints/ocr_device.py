@@ -20,13 +20,13 @@ class PymordialOCRDevice(ABC):
         """Extracts text from an image.
 
         Args:
-            image_path: Path to image file, image bytes, or numpy array.
+            image_path: The image source (file path, bytes, or numpy array).
 
         Returns:
-            Extracted text from the image.
+            The raw text extracted from the image.
 
         Raises:
-            ValueError: If image cannot be processed.
+            ValueError: If the image format is unsupported or cannot be processed.
         """
         pass
 
@@ -37,11 +37,12 @@ class PymordialOCRDevice(ABC):
         """Finds the coordinates (center) of the specified text in the image.
 
         Args:
-            search_text: Text to search for.
-            image_path: Path to image file, image bytes, or numpy array.
+            search_text: The text string to search for.
+            image_path: The image source (file path, bytes, or numpy array).
 
         Returns:
-            (x, y) coordinates of the center of the found text, or None if not found.
+            A tuple of (x, y) coordinates for the center of the found text,
+            or None if the text is not found.
         """
         pass
 
@@ -51,11 +52,11 @@ class PymordialOCRDevice(ABC):
         """Checks if image contains specific text.
 
         Args:
-            search_text: Text to search for.
-            image_path: Path to image file, image bytes, or numpy array.
+            search_text: The text string to search for.
+            image_path: The image source (file path, bytes, or numpy array).
 
         Returns:
-            True if text is found, False otherwise.
+            True if the search text is found (case-insensitive), False otherwise.
         """
         extracted = self.extract_text(image_path)
         return search_text.lower() in extracted.lower()
@@ -64,10 +65,10 @@ class PymordialOCRDevice(ABC):
         """Extracts text as individual lines.
 
         Args:
-            image_path: Path to image file, image bytes, or numpy array.
+            image_path: The image source (file path, bytes, or numpy array).
 
         Returns:
-            List of text lines.
+            A list of non-empty text lines extracted from the image.
         """
         text = self.extract_text(image_path)
         return [line.strip() for line in text.split("\n") if line.strip()]

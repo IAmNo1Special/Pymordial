@@ -59,7 +59,11 @@ class PymordialApp(ABC):
         )
 
     def add_screen(self, screen: "PymordialScreen") -> None:
-        """Adds a screen to the app."""
+        """Adds a screen to the app.
+
+        Args:
+            screen: The PymordialScreen instance to add.
+        """
         self.screens[screen.name] = screen
 
     @abstractmethod
@@ -81,15 +85,27 @@ class PymordialApp(ABC):
         pass
 
     def is_open(self) -> bool:
-        """Checks if the app is in the READY state."""
+        """Checks if the app is in the READY state.
+
+        Returns:
+            True if the app state is READY, False otherwise.
+        """
         return self.app_state.current_state == AppState.READY
 
     def is_loading(self) -> bool:
-        """Checks if the app is in the LOADING state."""
+        """Checks if the app is in the LOADING state.
+
+        Returns:
+            True if the app state is LOADING, False otherwise.
+        """
         return self.app_state.current_state == AppState.LOADING
 
     def is_closed(self) -> bool:
-        """Checks if the app is in the CLOSED state."""
+        """Checks if the app is in the CLOSED state.
+
+        Returns:
+            True if the app state is CLOSED, False otherwise.
+        """
         return self.app_state.current_state == AppState.CLOSED
 
     def __repr__(self) -> str:

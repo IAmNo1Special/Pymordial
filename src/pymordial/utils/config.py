@@ -22,6 +22,15 @@ _CONFIG = None
 
 
 class AppConfig(TypedDict):
+    """Configuration schema for application settings.
+
+    Attributes:
+        action_timeout: Max seconds to wait for actions like launch/close.
+        action_wait_time: Seconds to wait after performing an action.
+        ready_check_max_tries: Max attempts to check if app is ready.
+        close_wait_time: Seconds to wait after closing an app.
+    """
+
     action_timeout: int
     action_wait_time: int
     ready_check_max_tries: int
@@ -29,17 +38,40 @@ class AppConfig(TypedDict):
 
 
 class ElementConfig(TypedDict):
+    """Configuration schema for UI element settings.
+
+    Attributes:
+        default_confidence: Default match confidence (0.0 - 1.0) for images.
+        pixel_size: Default [width, height] for pixel checks.
+    """
+
     default_confidence: float
     pixel_size: list[int]
 
 
 class ControllerConfig(TypedDict):
+    """Configuration schema for controller interaction settings.
+
+    Attributes:
+        default_click_times: Default number of clicks per action.
+        default_max_tries: Default attempts to find an element.
+        click_coord_times: Number of clicks when clicking coordinates.
+    """
+
     default_click_times: int
     default_max_tries: int
     click_coord_times: int
 
 
 class PymordialConfig(TypedDict):
+    """Root configuration schema.
+
+    Attributes:
+        app: Application settings.
+        element: Element settings.
+        controller: Controller settings.
+    """
+
     app: AppConfig
     element: ElementConfig
     controller: ControllerConfig

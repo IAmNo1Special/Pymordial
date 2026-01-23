@@ -24,6 +24,12 @@ class PymordialImage(PymordialElement):
     image_text: str | None = None
 
     def __post_init__(self):
+        """Post-initialization processing and validation.
+
+        Raises:
+            TypeError: If filepath or image_text types are invalid, or if confidence is not numeric.
+            ValueError: If filepath is invalid, or confidence is not between 0 and 1.
+        """
         super().__post_init__()
 
         try:
