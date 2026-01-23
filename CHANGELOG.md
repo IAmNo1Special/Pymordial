@@ -8,19 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.1] - 2026-01-23
 
 ### Changed
-- **Platform Agnostic Core**:
-    - Converted `PymordialApp`, `PymordialScreen`, and `PymordialElement` to pure dataclasses.
-    - Removed all Android-specific logical dependencies (package name, ADB commands) from core.
-    - Cleaned `configs.yaml` of ADB/BlueStacks settings; now only contains generic `app`, `element`, `controller` config.
-    - Updated `PymordialElement` to default to 1920x1080 resolution if not specified, removing dependency on BlueStacks config.
-    - Moved `element.py` from `core/blueprints/` to `ui/`.
+- Converted `PymordialApp`, `PymordialScreen`, and `PymordialElement` to pure dataclasses.
 - **Blueprint Cleanup**:
     - Removed `basicConfig` from device blueprints (`PymordialBridgeDevice`, `PymordialVisionDevice`, `PymordialEmulatorDevice`).
     - Aligned `PymordialEmulatorDevice` state machine to be an instance attribute.
-- **Configuration**:
-    - Updated `pymordial_config.example.yaml` to match the new minimal schema.
 - **Testing**:
     - Added rigorous testing for dataclass validation and state machine logic.
+- Moved `element.py` from `core/blueprints/` to `ui/`.
+
+## [0.4.0] - 2026-01-23
+
+### Changed
+- **Platform Agnostic Core**:
+    - Removed all Android-specific logical dependencies (package name, ADB commands) from core.
+    - Cleaned `configs.yaml` of ADB/BlueStacks settings; now only contains generic `app`, `element`, `controller` config.
+    - Updated `PymordialElement` to default to 1920x1080 resolution if not specified, removing dependency on BlueStacks config.
+- **Configuration**:
+    - Updated `pymordial_config.example.yaml` to match the new minimal schema.
     - Restored `ConcreteApp` fixtures to verify core lifecycle logic without platform dependencies.
 - **Build**:
     - Updated `uv-build` dependency constraints.
