@@ -3,10 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from pymordial.core.blueprints.element import PymordialElement
-from pymordial.utils.config import get_config
-
-_CONFIG = get_config()
+from pymordial.ui.element import PymordialElement
 
 
 @dataclass(kw_only=True)
@@ -59,14 +56,3 @@ class PymordialImage(PymordialElement):
                     f"Image text must be a string, not {type(self.image_text).__name__}"
                 )
             self.image_text = self.image_text.lower()
-
-    def __repr__(self) -> str:
-        """Returns a string representation of the image element."""
-        return (
-            f"PymordialImage("
-            f"label='{self.label}', "
-            f"filepath='{self.filepath}', "
-            f"confidence={self.confidence}, "
-            f"position={self.position}, "
-            f"size={self.size})"
-        )

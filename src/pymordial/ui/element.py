@@ -1,33 +1,28 @@
 """Abstract base class for Pymordial UI elements."""
 
-from abc import ABC
 from dataclasses import dataclass, field
 from typing import final
 from uuid import uuid4
 
-from pymordial.utils.config import get_config
-
-_CONFIG = get_config()
-
 
 @dataclass(kw_only=True, eq=False)
-class PymordialElement(ABC):
+class PymordialElement:
     """Abstract base class for all UI elements.
 
     Attributes:
-        id: Unique identifier for this element instance (auto-generated).
         label: A unique identifier for the element.
         position: Optional (x, y) coordinates of the element's bounding box.
         size: Optional (width, height) of the element's bounding box.
         og_resolution: The original window resolution (width, height) used when
             defining the element.
+        element_id: Unique identifier for this element instance (auto-generated).
     """
 
-    id: str = field(default_factory=lambda: str(uuid4()), init=False, repr=False)
     label: str
     position: tuple[int | float, int | float] | None = None
     size: tuple[int | float, int | float] | None = None
     og_resolution: tuple[int, int] | None = None
+    element_id: str = field(default_factory=lambda: str(uuid4()), init=False)
 
     def __post_init__(self):
         """Post-initialization processing and validation.
@@ -128,20 +123,11 @@ class PymordialElement(ABC):
         return self.position
 
     def __hash__(self) -> int:
-        """Returns hash based on unique ID."""
-        return hash(self.id)
+        """Returns hash based on unique element_id."""
+        return hash(self.element_id)
 
     def __eq__(self, other) -> bool:
-        """Compares elements by their unique ID."""
+        """Compares elements by their unique element_id."""
         if not isinstance(other, PymordialElement):
-            return False
-        return self.id == other.id
-
-    def __repr__(self) -> str:
-        """Returns a string representation of the element."""
-        return (
-            f"{self.__class__.__name__}("
-            f"label='{self.label}', "
-            f"position={self.position}, "
-            f"size={self.size})"
-        )
+            return NotImplemented
+        return self.element_id == other.element_id

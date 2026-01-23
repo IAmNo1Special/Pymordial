@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pytest
 
 from pymordial.core.app import PymordialApp
@@ -42,25 +44,15 @@ class ConcreteController(PymordialController):
         return True
 
 
+@dataclass
 class ConcreteApp(PymordialApp):
     """Concrete implementation of PymordialApp for testing."""
 
-    def __init__(self, app_name: str, package_name: str):
-        super().__init__(app_name)
-        self.package_name = package_name
+    package_name: str = "com.test.app"
 
-    def _check_controller(self) -> None:
-        """Ensure implementation has a controller before operations."""
-        if not self.pymordial_controller:
-            raise ValueError(
-                f"{self.app_name}'s pymordial_controller is not initialized"
-            )
-
-    def open(self) -> bool:
-        self._check_controller()
-        # In a real impl, this would call controller specific methods
-        # Here we mock delegation to 'open_app' on the controller
-        result = self.pymordial_controller.open_app(
+    def open(self, controller: PymordialController) -> bool:
+        """Opens the app using the provided controller."""
+        result = controller.open_app(
             self.app_name,
             package_name=self.package_name,
             timeout=60,
@@ -70,9 +62,9 @@ class ConcreteApp(PymordialApp):
             self.app_state.transition_to(AppState.LOADING)
         return result
 
-    def close(self) -> bool:
-        self._check_controller()
-        result = self.pymordial_controller.close_app(
+    def close(self, controller: PymordialController) -> bool:
+        """Closes the app using the provided controller."""
+        result = controller.close_app(
             package_name=self.package_name,
             timeout=60,
             wait_time=1,
@@ -89,4 +81,4 @@ def mock_controller():
 
 @pytest.fixture
 def app():
-    return ConcreteApp("TestApp", "com.test.app")
+    return ConcreteApp(app_name="TestApp", package_name="com.test.app")

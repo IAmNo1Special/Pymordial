@@ -2,63 +2,64 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
+from uuid import uuid4
 
+from pymordial.core.screen import PymordialScreen
 from pymordial.core.state_machine import AppState, StateMachine
-
-if TYPE_CHECKING:
-    from pymordial.core.blueprints.element import PymordialElement
-    from pymordial.core.controller import PymordialController
-    from pymordial.core.screen import PymordialScreen
+from pymordial.ui.element import PymordialElement
+from pymordial.utils.exceptions import ScreenNotFoundError
 
 
-class PymordialApp(ABC):
-    """Abstract base class for application lifecycle management.
-
-    Concrete implementations should handle platform-specific app launching,
-    such as Android package management or iOS app bundles.
+@dataclass(eq=False)
+class PymordialApp:
+    """Represents an application.
 
     Attributes:
         app_name: The display name of the app.
-        pymordial_controller: The controller managing this app.
         screens: A dictionary of screens belonging to this app.
-        app_state: The state machine managing the app's lifecycle.
         ready_element: Optional element to detect when app is fully loaded.
+        app_state: The state machine managing the app's lifecycle (auto-generated).
+        app_id: Unique identifier for this app instance (auto-generated).
     """
 
-    def __init__(
-        self,
-        app_name: str,
-        screens: dict[str, "PymordialScreen"] | None = None,
-        ready_element: "PymordialElement | None" = None,
-    ) -> None:
-        """Initializes a PymordialApp.
-
-        Args:
-            app_name: The display name of the app.
-            screens: Optional dictionary of screens.
-            ready_element: Optional element that indicates app is ready.
-
-        Raises:
-            ValueError: If app_name is empty.
-        """
-        if not app_name:
-            raise ValueError("app_name must be a non-empty string")
-
-        self.app_name: str = app_name
-        self.pymordial_controller: "PymordialController | None" = None
-        self.screens: dict[str, "PymordialScreen"] = (
-            screens if screens is not None else {}
-        )
-        self.ready_element: "PymordialElement | None" = ready_element
-
-        self.app_state = StateMachine(
+    app_name: str
+    screens: dict[str, PymordialScreen] = field(default_factory=dict)
+    ready_element: PymordialElement | None = None
+    app_state: StateMachine = field(
+        default_factory=lambda: StateMachine(
             current_state=AppState.CLOSED,
             transitions=AppState.get_transitions(),
-        )
+        ),
+        init=False,
+    )
+    app_id: str = field(default_factory=lambda: str(uuid4()), init=False)
 
-    def add_screen(self, screen: "PymordialScreen") -> None:
+    def __post_init__(self) -> None:
+        """Initializes a PymordialApp.
+
+        Raises:
+            TypeError: If app_name is not a string.
+            ValueError: If app_name is empty.
+            TypeError: If screens is not a dictionary.
+            TypeError: If ready_element is not a PymordialElement or None.
+            TypeError: If app_state is not a StateMachine.
+        """
+        if not isinstance(self.app_name, str):
+            raise TypeError("app_name must be a string")
+        if not self.app_name:
+            raise ValueError("app_name must be a non-empty string")
+
+        if not isinstance(self.screens, dict):
+            raise TypeError("screens must be a dictionary")
+
+        if not isinstance(self.ready_element, PymordialElement | None):
+            raise TypeError("ready_element must be a PymordialElement or None")
+
+        if not isinstance(self.app_state, StateMachine):
+            raise TypeError("app_state must be a StateMachine")
+
+    def add_screen(self, screen: PymordialScreen) -> None:
         """Adds a screen to the app.
 
         Args:
@@ -66,52 +67,50 @@ class PymordialApp(ABC):
         """
         self.screens[screen.name] = screen
 
-    @abstractmethod
-    def open(self) -> bool:
-        """Opens the application.
+    def get_screen(self, name: str) -> PymordialScreen:
+        """Retrieves a screen by its name.
+
+        Args:
+            name: The name of the screen to retrieve.
 
         Returns:
-            True if the app was opened successfully, False otherwise.
-        """
-        pass
+            The PymordialScreen instance.
 
-    @abstractmethod
-    def close(self) -> bool:
-        """Closes the application.
+        Raises:
+            ScreenNotFoundError: If the screen is not found.
+        """
+        try:
+            return self.screens[name]
+        except KeyError:
+            raise ScreenNotFoundError(
+                f"Screen '{name}' not found within the '{self.app_name}' app."
+            )
+
+    def remove_screen(self, name: str) -> PymordialScreen:
+        """Removes a screen by its name.
+
+        Args:
+            name: The name of the screen to remove.
 
         Returns:
-            True if the app was closed successfully, False otherwise.
+            The removed PymordialScreen instance.
+
+        Raises:
+            ScreenNotFoundError: If the screen is not found.
         """
-        pass
+        try:
+            return self.screens.pop(name)
+        except KeyError:
+            raise ScreenNotFoundError(
+                f"Screen '{name}' not found within the '{self.app_name}' app."
+            )
 
-    def is_open(self) -> bool:
-        """Checks if the app is in the READY state.
+    def __hash__(self) -> int:
+        """Returns hash based on unique app_id."""
+        return hash(self.app_id)
 
-        Returns:
-            True if the app state is READY, False otherwise.
-        """
-        return self.app_state.current_state == AppState.READY
-
-    def is_loading(self) -> bool:
-        """Checks if the app is in the LOADING state.
-
-        Returns:
-            True if the app state is LOADING, False otherwise.
-        """
-        return self.app_state.current_state == AppState.LOADING
-
-    def is_closed(self) -> bool:
-        """Checks if the app is in the CLOSED state.
-
-        Returns:
-            True if the app state is CLOSED, False otherwise.
-        """
-        return self.app_state.current_state == AppState.CLOSED
-
-    def __repr__(self) -> str:
-        """Returns a string representation of the app."""
-        return (
-            f"{self.__class__.__name__}("
-            f"app_name='{self.app_name}', "
-            f"state={self.app_state.current_state.name})"
-        )
+    def __eq__(self, other) -> bool:
+        """Compares apps by their unique app_id."""
+        if not isinstance(other, PymordialApp):
+            return NotImplemented
+        return self.app_id == other.app_id

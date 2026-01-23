@@ -65,3 +65,12 @@ class ElementNotFoundError(PymordialError):
     - Attempting to retrieve a non-existent element from a screen
     - Attempting to remove a non-existent element from a screen
     """
+
+
+class ScreenNotFoundError(PymordialError):
+    """Error raised when a screen is not found.
+
+    This exception is raised when:
+    - Attempting to retrieve a non-existent screen from an app
+    - Attempting to remove a non-existent screen from an app
+    """

@@ -1,5 +1,7 @@
+import logging
 from abc import ABC, abstractmethod
-from logging import DEBUG, basicConfig, getLogger
+
+logger = logging.getLogger(__name__)
 
 
 class PymordialBridgeDevice(ABC):
@@ -7,11 +9,6 @@ class PymordialBridgeDevice(ABC):
 
     Defines the low-level commands to control the device hardware or emulator.
     """
-
-    logger = getLogger("PymordialBridgeDevice")
-    basicConfig(
-        level=DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
 
     @abstractmethod
     def connect(self):
