@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-01-23
+
+### Changed
+- **Platform Agnostic Core**:
+    - Converted `PymordialApp` to an Abstract Base Class (ABC).
+    - Removed all Android-specific logical dependencies (package name, ADB commands) from core.
+    - Cleaned `configs.yaml` of ADB/BlueStacks settings; now only contains generic `app`, `element`, `controller` config.
+    - Updated `PymordialElement` to default to 1920x1080 resolution if not specified, removing dependency on BlueStacks config.
+- **Configuration**:
+    - Updated `pymordial_config.example.yaml` to match the new minimal schema.
+- **Testing**:
+    - Added rigorous testing for abstract base classes.
+    - Restored `ConcreteApp` fixtures to verify core lifecycle logic without platform dependencies.
+- **Build**:
+    - Updated `uv-build` dependency constraints.
+
 ## [0.3.1] - 2026-01-21
 
 ### Changed
@@ -24,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `core/element.py` → `core/blueprints/element.py`
     - `ocr/extract_strategies.py` → `devices/extract_strategies.py`
     - `utils/state_machine.py` → `core/state_machine.py`
-- **Controller API**: `PymordialBluestacksController` now delegates all UI logic to `self.ui` (`PymordialUiDevice`).
+- **Controller API**: `PymordialController` now delegates all UI logic to `self.ui` (`PymordialUiDevice`).
 - **Dependencies**: Removed hard dependency on `easyocr`.
 
 ### Removed

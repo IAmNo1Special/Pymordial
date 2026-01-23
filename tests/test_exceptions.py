@@ -1,7 +1,5 @@
 """Tests for Pymordial exceptions."""
 
-import pytest
-
 from pymordial.utils.exceptions import (
     PymordialAppError,
     PymordialConnectionError,

@@ -1,33 +1,24 @@
 [project]
 name = "pymordial"
-version = "0.3.1"
-description = "A Python library designed to control BlueStacks through ADB commands, enabling seamless automation and management of Android applications on a PC."
+version = "0.4.0"
+description = "An extensible automation framework for Python, designed to support any platform via abstract controllers."
 readme = "README.md"
 authors = [
     { name = "IAmNo1Special", email = "ivmno1special@gmail.com" }
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "adb-shell>=0.4.4",
-    "av>=16.0.1",
-    "numpy>=2.2.5",
-    "opencv-python-headless>=4.12.0.88",
-    "pillow>=11.1.0",
-    "psutil>=7.0.0",
-    "pytesseract>=0.3.13",
     "pyyaml>=6.0.2",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: Microsoft :: Windows",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: System :: Emulators",
-    "Topic :: Utilities"
 ]
+
+
 
 [project.urls]
 homepage = "https://github.com/IAmNo1Special/Pymordial"
@@ -44,13 +35,10 @@ dev = [
     "pytest>=9.0.1",
     "pytest-mock>=3.15.1",
     "pytest-cov>=7.0.0",
+    "mkdocs-material>=9.7.1",
+    "mkdocstrings[python]>=1.0.1",
+    "pre-commit>=4.5.1",
 ]
-
-[tool.pytest.ini_options]
-markers = [
-    "integration: marks tests as integration tests (requires running BlueStacks and ADB)",
-]
-
 
 [tool.isort]
 profile = "black"

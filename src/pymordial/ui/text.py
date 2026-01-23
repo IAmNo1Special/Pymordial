@@ -22,6 +22,12 @@ class PymordialText(PymordialElement):
     extract_strategy: PymordialExtractStrategy | None = None
 
     def __post_init__(self):
+        """Post-initialization processing and validation.
+
+        Raises:
+            TypeError: If filepath, element_text, or extract_strategy types are invalid.
+            ValueError: If filepath string is invalid.
+        """
         super().__post_init__()
 
         if self.filepath is not None:
