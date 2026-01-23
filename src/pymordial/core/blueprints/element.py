@@ -113,7 +113,7 @@ class PymordialElement(ABC):
 
     @property
     @final
-    def center(self) -> tuple[int, int] | None:
+    def center(self) -> tuple[int | float, int | float] | None:
         """Calculates the center coordinates.
 
         Returns:
@@ -125,7 +125,7 @@ class PymordialElement(ABC):
                 int(self.position[0] + self.size[0] // 2),
                 int(self.position[1] + self.size[1] // 2),
             )
-        return self.position  # type: ignore
+        return self.position
 
     def __hash__(self) -> int:
         """Returns hash based on unique ID."""
