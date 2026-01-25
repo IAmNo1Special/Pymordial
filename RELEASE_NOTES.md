@@ -10,7 +10,7 @@ This release marks a major architectural shift, decoupling the core framework fr
 *   **Android Decoupling**: Moved all Android package management, ADB commands, and BlueStacks logic out of the core library. These will live in platform-specific extensions (e.g., `pymordialblue`).
 *   **Clean Configuration**: The `configs.yaml` and `TypedDict` structures have been stripped of all ADB/BlueStacks settings. The core config now only manages generic `app`, `element`, and `controller` settings.
 *   **Blueprint Cleanup**: Removed improper `basicConfig` calls from device blueprints and aligned state machines to be instance attributes.
-*   **Enhanced Testing**: Added rigorous verification for dataclass validation and state machine logic using concrete test implementations.
+*   **Testing Improvements**: Comprehensive coverage for state machine transitions and core dataclass behavior.
 
 ### ⚠️ Breaking Changes
 
