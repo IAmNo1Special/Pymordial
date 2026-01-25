@@ -116,7 +116,9 @@ class TestStateMachine:
             transitions=AppState.get_transitions(),
         )
         with pytest.raises(ValueError):
-            sm.transition_to(AppState.READY)  # Can't go CLOSED -> READY
+            sm.transition_to(
+                AppState.CLOSED
+            )  # Can't self-transition explicitly unless in list
 
 
 class TestPymordialScreen:
