@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Updated `PymordialElement` to default to 1920x1080 resolution if not specified, removing dependency on BlueStacks config.
 - **Configuration**:
     - Updated `pymordial_config.example.yaml` to match the new minimal schema.
-s    - Restored `ConcreteApp` fixtures to verify core lifecycle logic without platform dependencies.
+    - Restored `ConcreteApp` fixtures to verify core lifecycle logic without platform dependencies.
 - **Build**:
     - Updated `uv-build` dependency constraints.
 
