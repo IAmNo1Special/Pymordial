@@ -2,10 +2,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import numpy as np
+from typing import Any
 
 
 class PymordialOCRDevice(ABC):
@@ -16,7 +13,7 @@ class PymordialOCRDevice(ABC):
     """
 
     @abstractmethod
-    def extract_text(self, image_path: "Path | bytes | str | np.ndarray") -> str:
+    def extract_text(self, image_path: Path | bytes | str | Any) -> str:
         """Extracts text from an image.
 
         Args:
@@ -31,9 +28,7 @@ class PymordialOCRDevice(ABC):
         pass
 
     @abstractmethod
-    def find_text(
-        self, search_text: str, image_path: "Path | bytes | str | np.ndarray"
-    ) -> tuple[int, int] | None:
+    def find_text(self, search_text: str, image_path: Any) -> tuple[int, int] | None:
         """Finds the coordinates (center) of the specified text in the image.
 
         Args:
@@ -47,7 +42,7 @@ class PymordialOCRDevice(ABC):
         pass
 
     def contains_text(
-        self, search_text: str, image_path: "Path | bytes | str | np.ndarray"
+        self, search_text: str, image_path: Path | bytes | str | Any
     ) -> bool:
         """Checks if image contains specific text.
 
@@ -61,7 +56,7 @@ class PymordialOCRDevice(ABC):
         extracted = self.extract_text(image_path)
         return search_text.lower() in extracted.lower()
 
-    def extract_lines(self, image_path: "Path | bytes | str | np.ndarray") -> list[str]:
+    def extract_lines(self, image_path: Path | bytes | str | Any) -> list[str]:
         """Extracts text as individual lines.
 
         Args:

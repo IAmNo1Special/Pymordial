@@ -1,8 +1,10 @@
+import logging
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from logging import DEBUG, basicConfig, getLogger
 
 from pymordial.core.state_machine import StateMachine
+
+logger = logging.getLogger(__name__)
 
 
 class EmulatorState(Enum):
@@ -30,18 +32,14 @@ class PymordialEmulatorDevice(ABC):
     """Abstract interface for controlling emulator software (e.g., BlueStacks).
 
     Attributes:
-        logger: Logger instance for emulator operations.
         state: StateMachine tracking the emulator's lifecycle.
     """
 
-    logger = getLogger("PymordialEmulatorDevice")
-    state = StateMachine(
-        current_state=EmulatorState.CLOSED,
-        transitions=EmulatorState.get_transitions(),
-    )
-    basicConfig(
-        level=DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    def __init__(self):
+        self.state = StateMachine(
+            current_state=EmulatorState.CLOSED,
+            transitions=EmulatorState.get_transitions(),
+        )
 
     @abstractmethod
     def open(self):

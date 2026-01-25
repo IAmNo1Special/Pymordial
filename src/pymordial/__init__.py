@@ -5,11 +5,11 @@ automating BlueStacks interactions.
 """
 
 from pymordial.core.app import PymordialApp
-from pymordial.core.blueprints.element import PymordialElement
 from pymordial.core.blueprints.emulator_device import EmulatorState
 from pymordial.core.controller import PymordialController
 from pymordial.core.screen import PymordialScreen
 from pymordial.core.state_machine import AppState, StateMachine
+from pymordial.ui.element import PymordialElement
 from pymordial.ui.image import PymordialImage
 from pymordial.ui.pixel import PymordialPixel
 from pymordial.ui.text import PymordialText

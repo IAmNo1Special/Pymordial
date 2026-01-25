@@ -12,13 +12,5 @@ wheels/
 # Environment variables
 .env
 
-# User configuration (use config.example.yaml as template)
-config.yaml
-
+# Temporary files
 .tmp.*
-
-htmlcov/
-
-.pytest_cache/
-
-.coverage

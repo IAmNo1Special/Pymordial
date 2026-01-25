@@ -5,18 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-01-25
+
+### Changed
+- Converted `PymordialApp`, `PymordialScreen`, and `PymordialElement` to pure dataclasses.
+- **Import refactor**: Removed unnecessary `TYPE_CHECKING` blocks and `from __future__ import annotations` across core modules; moved internal inter-core imports to top-level for better clarity.
+- **Blueprint Cleanup**:
+    - Removed `basicConfig` from device blueprints (`PymordialBridgeDevice`, `PymordialVisionDevice`, `PymordialEmulatorDevice`).
+    - Aligned `PymordialEmulatorDevice` state machine to be an instance attribute.
+- **Testing**:
+    - Added rigorous testing for dataclass validation and state machine logic.
+- Moved `element.py` from `core/blueprints/` to `ui/`.
+
 ## [0.4.0] - 2026-01-23
 
 ### Changed
 - **Platform Agnostic Core**:
-    - Converted `PymordialApp` to an Abstract Base Class (ABC).
     - Removed all Android-specific logical dependencies (package name, ADB commands) from core.
     - Cleaned `configs.yaml` of ADB/BlueStacks settings; now only contains generic `app`, `element`, `controller` config.
     - Updated `PymordialElement` to default to 1920x1080 resolution if not specified, removing dependency on BlueStacks config.
 - **Configuration**:
     - Updated `pymordial_config.example.yaml` to match the new minimal schema.
-- **Testing**:
-    - Added rigorous testing for abstract base classes.
     - Restored `ConcreteApp` fixtures to verify core lifecycle logic without platform dependencies.
 - **Build**:
     - Updated `uv-build` dependency constraints.

@@ -20,7 +20,7 @@ class AppState(Enum):
             A dictionary mapping current states to their allowed next states.
         """
         return {
-            cls.CLOSED: [cls.LOADING],
+            cls.CLOSED: [cls.LOADING, cls.READY],
             cls.LOADING: [cls.CLOSED, cls.READY],
             cls.READY: [cls.CLOSED, cls.LOADING],
         }

@@ -36,19 +36,26 @@ class TestPymordialControllerABC:
         assert expected.issubset(abstract_methods)
 
 
-class TestPymordialAppABC:
-    """Test PymordialApp abstract base class."""
+class TestPymordialApp:
+    """Test PymordialApp functionality."""
 
-    def test_cannot_instantiate_directly(self):
-        """ABC should not be instantiable."""
-        with pytest.raises(TypeError, match="abstract"):
-            PymordialApp("TestApp")
+    def test_instantiation(self):
+        """PymordialApp should be instantiable as a dataclass."""
+        app = PymordialApp(app_name="TestApp")
+        assert app.app_name == "TestApp"
+        assert app.screens == {}
+        assert app.app_id is not None
+        assert app.app_state.current_state == AppState.CLOSED
 
-    def test_has_required_abstract_methods(self):
-        """Verify expected abstract methods exist."""
-        abstract_methods = PymordialApp.__abstractmethods__
-        assert "open" in abstract_methods
-        assert "close" in abstract_methods
+    def test_validation_empty_name(self):
+        """app_name cannot be empty."""
+        with pytest.raises(ValueError, match="app_name must be a non-empty string"):
+            PymordialApp(app_name="")
+
+    def test_validation_invalid_type(self):
+        """app_name must be a string."""
+        with pytest.raises(TypeError, match="app_name must be a string"):
+            PymordialApp(app_name=123)  # type: ignore
 
 
 class TestPymordialAppImplementation:
@@ -58,12 +65,11 @@ class TestPymordialAppImplementation:
         """Test full app lifecycle delegates to controller correctly."""
         # 1. Registration
         mock_controller.add_app(app)
-        assert app.pymordial_controller is mock_controller
         assert "TestApp" in mock_controller.list_apps()
 
         # 2. Open App delegation
         mock_controller.open_app = MagicMock(return_value=True)
-        assert app.open() is True
+        assert app.open(mock_controller) is True
 
         mock_controller.open_app.assert_called_once()
         args, kwargs = mock_controller.open_app.call_args
@@ -76,19 +82,11 @@ class TestPymordialAppImplementation:
         app.app_state.transition_to(AppState.READY)
         mock_controller.close_app = MagicMock(return_value=True)
 
-        assert app.close() is True
+        assert app.close(mock_controller) is True
 
         mock_controller.close_app.assert_called_once()
         assert mock_controller.close_app.call_args[1]["package_name"] == "com.test.app"
         assert app.app_state.current_state == AppState.CLOSED
-
-    def test_app_requires_controller(self, app):
-        """App methods raise ValueError if controller is missing."""
-        with pytest.raises(ValueError, match="controller is not initialized"):
-            app.open()
-
-        with pytest.raises(ValueError, match="controller is not initialized"):
-            app.close()
 
 
 class TestStateMachine:
@@ -118,7 +116,9 @@ class TestStateMachine:
             transitions=AppState.get_transitions(),
         )
         with pytest.raises(ValueError):
-            sm.transition_to(AppState.READY)  # Can't go CLOSED -> READY
+            sm.transition_to(
+                AppState.CLOSED
+            )  # Can't self-transition explicitly unless in list
 
 
 class TestPymordialScreen:

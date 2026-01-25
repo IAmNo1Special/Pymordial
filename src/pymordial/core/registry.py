@@ -2,12 +2,10 @@
 
 import importlib.metadata
 import logging
-from typing import TYPE_CHECKING, Dict
+from typing import Dict
 
 from pymordial.core.plugin import PymordialPlugin
-
-if TYPE_CHECKING:
-    from pymordial.utils.config import PymordialConfig
+from pymordial.utils.config import PymordialConfig
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +18,7 @@ class PluginRegistry:
 
     ENTRY_POINT_GROUP = "pymordial.plugins"
 
-    def __init__(self, config: "PymordialConfig | None" = None) -> None:
+    def __init__(self, config: PymordialConfig | None = None) -> None:
         self._plugins: Dict[str, PymordialPlugin] = {}
         self._config = config or {}
 

@@ -1,17 +1,12 @@
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import numpy as np
+from typing import Any
 
 
 class PymordialExtractStrategy(ABC):
     """Abstract base class for OCR preprocessing strategies."""
 
     @abstractmethod
-    def preprocess(self, image: np.ndarray) -> np.ndarray:
+    def preprocess(self, image: Any) -> Any:
         """Returns a pre‑processed image ready for OCR.
 
         Args:
