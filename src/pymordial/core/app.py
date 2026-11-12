@@ -1,7 +1,11 @@
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from pymordial.core.screen import PymordialScreen
+
+if TYPE_CHECKING:
+    from pymordial.core.controller import PymordialController
 from pymordial.core.state_machine import AppState, StateMachine
 from pymordial.ui.element import PymordialElement
 from pymordial.utils.exceptions import ScreenNotFoundError
@@ -15,6 +19,8 @@ class PymordialApp:
         app_name: The display name of the app.
         screens: A dictionary of screens belonging to this app.
         ready_element: Optional element to detect when app is fully loaded.
+        package_name: The platform-specific package identifier (e.g. bundle ID)
+            used when opening or closing the app. Required by open() and close().
         app_state: The state machine managing the app's lifecycle (auto-generated).
         app_id: Unique identifier for this app instance (auto-generated).
     """
@@ -22,6 +28,7 @@ class PymordialApp:
     app_name: str
     screens: dict[str, PymordialScreen] = field(default_factory=dict)
     ready_element: PymordialElement | None = None
+    package_name: str | None = None
     app_state: StateMachine = field(
         default_factory=lambda: StateMachine(
             current_state=AppState.CLOSED,
@@ -52,8 +59,85 @@ class PymordialApp:
         if not isinstance(self.ready_element, PymordialElement | None):
             raise TypeError("ready_element must be a PymordialElement or None")
 
+        if not isinstance(self.package_name, str | None):
+            raise TypeError("package_name must be a string or None")
+
         if not isinstance(self.app_state, StateMachine):
             raise TypeError("app_state must be a StateMachine")
+
+    def _require_package_name(self) -> str:
+        """Returns package_name, or raises if it was never set."""
+        if self.package_name is None:
+            raise ValueError(
+                "package_name must be set before opening or closing "
+                f"the '{self.app_name}' app."
+            )
+        return self.package_name
+
+    def open(
+        self,
+        controller: "PymordialController",
+        timeout: int = 60,
+        wait_time: int = 10,
+    ) -> bool:
+        """Opens the app using the provided controller.
+
+        On success the app state transitions to LOADING (a repeat open
+        while already LOADING leaves the state untouched instead of
+        raising on an invalid LOADING -> LOADING transition).
+
+        Args:
+            controller: The controller that launches the app on the device.
+            timeout: Maximum seconds to wait for launch.
+            wait_time: Seconds to wait after the launch command.
+
+        Returns:
+            True if the app launched successfully, False otherwise.
+
+        Raises:
+            ValueError: If package_name was never set.
+        """
+        result = controller.open_app(
+            self.app_name,
+            package_name=self._require_package_name(),
+            timeout=timeout,
+            wait_time=wait_time,
+        )
+        if result and self.app_state.current_state != AppState.LOADING:
+            self.app_state.transition_to(AppState.LOADING)
+        return result
+
+    def close(
+        self,
+        controller: "PymordialController",
+        timeout: int = 60,
+        wait_time: int = 1,
+    ) -> bool:
+        """Closes the app using the provided controller.
+
+        On success the app state transitions to CLOSED (a repeat close
+        while already CLOSED leaves the state untouched instead of
+        raising on an invalid CLOSED -> CLOSED transition).
+
+        Args:
+            controller: The controller that closes the app on the device.
+            timeout: Maximum seconds to wait for closure.
+            wait_time: Seconds to wait after the close command.
+
+        Returns:
+            True if the app closed successfully, False otherwise.
+
+        Raises:
+            ValueError: If package_name was never set.
+        """
+        result = controller.close_app(
+            package_name=self._require_package_name(),
+            timeout=timeout,
+            wait_time=wait_time,
+        )
+        if result and self.app_state.current_state != AppState.CLOSED:
+            self.app_state.transition_to(AppState.CLOSED)
+        return result
 
     def add_screen(self, screen: PymordialScreen) -> None:
         """Adds a screen to the app.

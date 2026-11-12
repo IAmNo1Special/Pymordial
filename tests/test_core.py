@@ -57,6 +57,45 @@ class TestPymordialApp:
         with pytest.raises(TypeError, match="app_name must be a string"):
             PymordialApp(app_name=123)  # type: ignore
 
+    def test_open_close_on_library_app(self, mock_controller):
+        """The library app itself can open and close, no subclass needed."""
+        app = PymordialApp(app_name="TestApp", package_name="com.test.app")
+
+        mock_controller.open_app = MagicMock(return_value=True)
+        assert app.open(mock_controller) is True
+        args, kwargs = mock_controller.open_app.call_args
+        assert args[0] == "TestApp"
+        assert kwargs["package_name"] == "com.test.app"
+        assert app.app_state.current_state == AppState.LOADING
+
+        # Repeat open while LOADING must not raise on LOADING -> LOADING.
+        assert app.open(mock_controller) is True
+        assert app.app_state.current_state == AppState.LOADING
+
+        mock_controller.close_app = MagicMock(return_value=True)
+        assert app.close(mock_controller) is True
+        assert mock_controller.close_app.call_args[1]["package_name"] == "com.test.app"
+        assert app.app_state.current_state == AppState.CLOSED
+
+        # Repeat close while CLOSED must not raise on CLOSED -> CLOSED.
+        assert app.close(mock_controller) is True
+        assert app.app_state.current_state == AppState.CLOSED
+
+    def test_open_requires_package_name(self, mock_controller):
+        """Opening without a package_name fails loudly, not silently."""
+        app = PymordialApp(app_name="TestApp")
+        with pytest.raises(ValueError, match="package_name must be set"):
+            app.open(mock_controller)
+        with pytest.raises(ValueError, match="package_name must be set"):
+            app.close(mock_controller)
+
+    def test_failed_open_leaves_state_closed(self, mock_controller):
+        """A failed launch must not move the app out of CLOSED."""
+        app = PymordialApp(app_name="TestApp", package_name="com.test.app")
+        mock_controller.open_app = MagicMock(return_value=False)
+        assert app.open(mock_controller) is False
+        assert app.app_state.current_state == AppState.CLOSED
+
 
 class TestPymordialAppImplementation:
     """Test a concrete implementation of PymordialApp (logic verification)."""
