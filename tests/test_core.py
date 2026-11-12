@@ -120,6 +120,37 @@ class TestStateMachine:
                 AppState.CLOSED
             )  # Can't self-transition explicitly unless in list
 
+    def test_register_handlers_in_separate_calls_keeps_both(self):
+        """Registering on_exit after on_enter must not drop on_enter."""
+        calls = []
+        sm = StateMachine(
+            current_state=AppState.CLOSED,
+            transitions=AppState.get_transitions(),
+        )
+        sm.register_handler(AppState.LOADING, on_enter=lambda: calls.append("enter"))
+        sm.register_handler(AppState.LOADING, on_exit=lambda: calls.append("exit"))
+
+        sm.transition_to(AppState.LOADING)
+        sm.transition_to(AppState.READY)
+
+        assert calls == ["enter", "exit"]
+
+    def test_reregistering_one_handler_keeps_the_other(self):
+        """Replacing on_enter must leave the existing on_exit in place."""
+        calls = []
+        sm = StateMachine(
+            current_state=AppState.CLOSED,
+            transitions=AppState.get_transitions(),
+        )
+        sm.register_handler(AppState.LOADING, on_enter=lambda: calls.append("old"))
+        sm.register_handler(AppState.LOADING, on_exit=lambda: calls.append("exit"))
+        sm.register_handler(AppState.LOADING, on_enter=lambda: calls.append("new"))
+
+        sm.transition_to(AppState.LOADING)
+        sm.transition_to(AppState.READY)
+
+        assert calls == ["new", "exit"]
+
 
 class TestPymordialScreen:
     """Test PymordialScreen functionality."""
