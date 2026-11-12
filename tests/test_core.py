@@ -8,6 +8,7 @@ from pymordial.core.app import PymordialApp
 from pymordial.core.controller import PymordialController
 from pymordial.core.screen import PymordialScreen
 from pymordial.core.state_machine import AppState, StateMachine
+from pymordial.utils.exceptions import PymordialStateError
 
 
 class TestPymordialControllerABC:
@@ -189,6 +190,25 @@ class TestStateMachine:
         sm.transition_to(AppState.READY)
 
         assert calls == ["new", "exit"]
+
+    def test_invalid_transition_raises_state_error(self):
+        """Invalid transitions should raise the framework's state error."""
+        sm = StateMachine(
+            current_state=AppState.CLOSED,
+            transitions=AppState.get_transitions(),
+        )
+        with pytest.raises(PymordialStateError):
+            sm.transition_to(AppState.CLOSED)
+
+    def test_state_error_is_still_a_value_error(self):
+        """Existing `except ValueError` handlers keep catching bad transitions."""
+        assert issubclass(PymordialStateError, ValueError)
+        sm = StateMachine(
+            current_state=AppState.CLOSED,
+            transitions=AppState.get_transitions(),
+        )
+        with pytest.raises(ValueError):
+            sm.transition_to(AppState.CLOSED)
 
 
 class TestPymordialScreen:
