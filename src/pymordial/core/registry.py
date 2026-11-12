@@ -84,12 +84,11 @@ class PluginRegistry:
                     )
                     continue
 
-                # Initialize
-                # TODO: Pass full config or specific config? For now passing empty/None is risky if they depend on it.
-                # Ideally config is passed during register or init phase.
-                # We'll assume for now plugins handle their own config logic or we pass the global one.
-                if self._config:
-                    plugin_instance.initialize(self._config)
+                # Initialize every plugin, even when the registry has no
+                # config. An empty config means "use your defaults", not
+                # "skip setup": skipping initialize() left plugins
+                # registered but uninitialized.
+                plugin_instance.initialize(self._config)
 
                 self.register(plugin_instance)
 
