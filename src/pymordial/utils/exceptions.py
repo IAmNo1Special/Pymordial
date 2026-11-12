@@ -28,13 +28,16 @@ class PymordialAppError(PymordialError):
     """
 
 
-class PymordialStateError(PymordialError):
+class PymordialStateError(PymordialError, ValueError):
     """Error related to invalid state transitions.
 
     This exception is raised when:
     - An invalid state transition is attempted
     - The current state is unexpected
     - State validation fails
+
+    It subclasses ValueError so existing ``except ValueError`` handlers
+    keep catching invalid transitions.
     """
 
 
