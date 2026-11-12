@@ -101,3 +101,22 @@ class PluginRegistry:
     def list_plugins(self) -> list[str]:
         """Returns a list of names of registered plugins."""
         return list(self._plugins.keys())
+
+    def shutdown_all(self) -> None:
+        """Shuts down every registered plugin.
+
+        Calls shutdown() on each plugin in registration order. If one
+        plugin fails, the error is logged and shutdown continues with
+        the remaining plugins, so a single faulty plugin cannot block
+        cleanup of the rest. Plugins are removed from the registry
+        once shutdown has been attempted for all of them, so calling
+        this method again is a safe no-op.
+        """
+        for name, plugin in list(self._plugins.items()):
+            try:
+                plugin.shutdown()
+                logger.debug(f"Shut down plugin: {name}")
+            except Exception as e:
+                logger.error(f"Failed to shut down plugin '{name}': {e}")
+
+        self._plugins.clear()
