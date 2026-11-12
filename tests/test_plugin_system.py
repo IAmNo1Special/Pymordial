@@ -16,13 +16,23 @@ class MockPlugin:
     def __init__(self):
         self.initialized = False
         self.config = {}
+        self.shutdown_called = False
 
     def initialize(self, config: dict) -> None:
         self.initialized = True
         self.config = config
 
     def shutdown(self) -> None:
-        pass
+        self.shutdown_called = True
+
+
+class FailingPlugin(MockPlugin):
+    """A mock plugin whose shutdown always fails."""
+
+    name: str = "failing_plugin"
+
+    def shutdown(self) -> None:
+        raise RuntimeError("shutdown failed")
 
 
 def test_registry_register_and_get():
@@ -42,6 +52,55 @@ def test_registry_get_missing():
     registry = PluginRegistry()
     with pytest.raises(KeyError, match="Plugin 'missing' not found"):
         registry.get("missing")
+
+
+def test_shutdown_all_calls_shutdown_on_each_plugin():
+    """Test that shutdown_all calls shutdown on every plugin."""
+    registry = PluginRegistry()
+    p1 = MockPlugin()
+    p2 = MockPlugin()
+    p2.name = "mock_plugin_2"
+
+    registry.register(p1)
+    registry.register(p2)
+    registry.shutdown_all()
+
+    assert p1.shutdown_called is True
+    assert p2.shutdown_called is True
+
+
+def test_shutdown_all_continues_when_one_plugin_fails(caplog):
+    """Test that one failing plugin does not stop the rest shutting down."""
+    registry = PluginRegistry()
+    failing = FailingPlugin()
+    ok = MockPlugin()
+
+    registry.register(failing)
+    registry.register(ok)
+    registry.shutdown_all()
+
+    assert ok.shutdown_called is True
+    assert "Failed to shut down plugin 'failing_plugin'" in caplog.text
+
+
+def test_shutdown_all_clears_registry():
+    """Test that plugins are removed from the registry after shutdown."""
+    registry = PluginRegistry()
+    registry.register(MockPlugin())
+
+    registry.shutdown_all()
+
+    assert registry.list_plugins() == []
+    # A second call is a safe no-op.
+    registry.shutdown_all()
+    assert registry.list_plugins() == []
+
+
+def test_shutdown_all_empty_registry():
+    """Test that shutting down an empty registry does nothing."""
+    registry = PluginRegistry()
+    registry.shutdown_all()
+    assert registry.list_plugins() == []
 
 
 def test_registry_duplicate_registration_logs_warning(caplog):
