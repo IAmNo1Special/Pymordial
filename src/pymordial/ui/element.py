@@ -122,6 +122,116 @@ class PymordialElement:
             )
         return self.position
 
+    @staticmethod
+    def _validate_resolution(
+        resolution: tuple[int, int],
+    ) -> tuple[int, int]:
+        """Validates a (width, height) resolution tuple.
+
+        Raises:
+            TypeError: If the resolution is not a tuple of integers.
+            ValueError: If it does not have 2 values or any value is not positive.
+        """
+        if not isinstance(resolution, tuple):
+            raise TypeError(
+                f"Resolution must be a tuple, not {type(resolution).__name__}"
+            )
+        if len(resolution) != 2:
+            raise ValueError(
+                f"Resolution must have 2 values (width, height), got {len(resolution)}"
+            )
+        if not all(isinstance(r, int) for r in resolution):
+            raise TypeError("All resolution values must be integers")
+        if not all(r > 0 for r in resolution):
+            raise ValueError(
+                f"Resolution values must be positive, got {resolution}"
+            )
+        return resolution
+
+    def _scale_point(
+        self,
+        point: tuple[int | float, int | float],
+        current_resolution: tuple[int, int],
+    ) -> tuple[int, int]:
+        """Scales one (x, y) point from og_resolution to current_resolution."""
+        width, height = self._validate_resolution(current_resolution)
+        og_width, og_height = self.og_resolution
+        return (
+            round(point[0] * width / og_width),
+            round(point[1] * height / og_height),
+        )
+
+    def scaled_position(
+        self, current_resolution: tuple[int, int]
+    ) -> tuple[int, int] | None:
+        """Returns the element's position scaled to current_resolution.
+
+        Each axis scales independently by its own ratio, so a layout
+        recorded at one aspect ratio still lands proportionally on another.
+        Returns None when the element has no position. The stored
+        position and og_resolution are never modified, so old saved
+        elements keep working exactly as before.
+        """
+        if self.position is None:
+            return None
+        return self._scale_point(self.position, current_resolution)
+
+    def scaled_size(
+        self, current_resolution: tuple[int, int]
+    ) -> tuple[int, int] | None:
+        """Returns the element's size scaled to current_resolution.
+
+        Returns None when the element has no size.
+        """
+        if self.size is None:
+            return None
+        width, height = self._validate_resolution(current_resolution)
+        og_width, og_height = self.og_resolution
+        return (
+            round(self.size[0] * width / og_width),
+            round(self.size[1] * height / og_height),
+        )
+
+    def scaled_region(
+        self, current_resolution: tuple[int, int]
+    ) -> tuple[int, int, int, int] | None:
+        """Returns the bounding box scaled to current_resolution.
+
+        Returns (left, top, right, bottom), or None when the element
+        has no position or size. Mirrors region, computed from the
+        scaled position and scaled size.
+        """
+        scaled_position = self.scaled_position(current_resolution)
+        scaled_size = self.scaled_size(current_resolution)
+        if scaled_position is None or scaled_size is None:
+            return None
+        return (
+            scaled_position[0],
+            scaled_position[1],
+            scaled_position[0] + scaled_size[0],
+            scaled_position[1] + scaled_size[1],
+        )
+
+    def scaled_center(
+        self, current_resolution: tuple[int, int]
+    ) -> tuple[int, int] | None:
+        """Returns the click target scaled to current_resolution.
+
+        Mirrors center, computed from the scaled position and scaled
+        size, and falls back to the scaled position when there is no
+        size. Returns None when the element has no position.
+        """
+        scaled_position = self.scaled_position(current_resolution)
+        if scaled_position is None:
+            return None
+        scaled_size = self.scaled_size(current_resolution)
+        if scaled_size is None:
+            return scaled_position
+        return (
+            scaled_position[0] + scaled_size[0] // 2,
+            scaled_position[1] + scaled_size[1] // 2,
+        )
+
     def __hash__(self) -> int:
         """Returns hash based on unique element_id."""
         return hash(self.element_id)
