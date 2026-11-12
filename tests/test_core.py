@@ -190,6 +190,30 @@ class TestStateMachine:
 
         assert calls == ["new", "exit"]
 
+    def test_closed_to_ready_is_invalid(self):
+        """CLOSED must go through LOADING; it cannot skip straight to READY."""
+        sm = StateMachine(
+            current_state=AppState.CLOSED,
+            transitions=AppState.get_transitions(),
+        )
+        with pytest.raises(ValueError):
+            sm.transition_to(AppState.READY)
+
+    def test_closed_only_exits_to_loading(self):
+        """LOADING is the only allowed exit from CLOSED."""
+        assert AppState.get_transitions()[AppState.CLOSED] == [AppState.LOADING]
+
+    def test_full_lifecycle_closed_loading_ready_closed(self):
+        """The full lifecycle still works: CLOSED -> LOADING -> READY -> CLOSED."""
+        sm = StateMachine(
+            current_state=AppState.CLOSED,
+            transitions=AppState.get_transitions(),
+        )
+        sm.transition_to(AppState.LOADING)
+        sm.transition_to(AppState.READY)
+        sm.transition_to(AppState.CLOSED)
+        assert sm.current_state == AppState.CLOSED
+
 
 class TestPymordialScreen:
     """Test PymordialScreen functionality."""
