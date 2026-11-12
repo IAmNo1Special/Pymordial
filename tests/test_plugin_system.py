@@ -81,9 +81,10 @@ def test_load_from_entry_points():
         assert isinstance(plugin, MockPlugin)
         assert plugin.name == "mock_plugin"
 
-        # Verify default init calls (depends on implementation details in load_from_entry_points)
-        # Current implementation calls initialize(config)
-        assert plugin.initialized is False  # Config was empty in registry init locally
+        # Verify default init calls: initialize() runs even with an empty
+        # config, so the plugin can set up its own defaults.
+        assert plugin.initialized is True
+        assert plugin.config == {}
 
         # Test with config
         config = {"foo": "bar"}
@@ -103,3 +104,23 @@ def test_load_from_entry_points():
         plugin_2 = registry_with_config.get("mock_plugin")
         assert plugin_2.initialized is True
         assert plugin_2.config == config
+
+
+def test_load_from_entry_points_initializes_with_empty_config():
+    """A plugin loaded with no registry config is still initialized."""
+    registry = PluginRegistry(config={})
+
+    with patch("importlib.metadata.entry_points") as mock_entry_points:
+        mock_ep = MagicMock()
+        mock_ep.name = "mock_ep"
+        mock_ep.load.return_value = MockPlugin
+
+        mock_select = MagicMock()
+        mock_select.select.return_value = [mock_ep]
+        mock_entry_points.return_value = mock_select
+
+        registry.load_from_entry_points()
+
+        plugin = registry.get("mock_plugin")
+        assert plugin.initialized is True
+        assert plugin.config == {}
