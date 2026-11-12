@@ -143,9 +143,7 @@ class PymordialElement:
         if not all(isinstance(r, int) for r in resolution):
             raise TypeError("All resolution values must be integers")
         if not all(r > 0 for r in resolution):
-            raise ValueError(
-                f"Resolution values must be positive, got {resolution}"
-            )
+            raise ValueError(f"Resolution values must be positive, got {resolution}")
         return resolution
 
     def _scale_point(
