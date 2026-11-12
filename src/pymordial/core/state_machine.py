@@ -91,14 +91,11 @@ class StateMachine:
             on_enter: Handler called when entering the state.
             on_exit: Handler called when exiting the state.
         """
-        handlers = {}
+        handlers = self.state_handlers.setdefault(state, {})
         if on_enter:
             handlers["on_enter"] = on_enter
         if on_exit:
             handlers["on_exit"] = on_exit
-
-        if handlers:
-            self.state_handlers[state] = handlers
 
     def __str__(self) -> str:
         return f"StateMachine(current_state={self.current_state})"
