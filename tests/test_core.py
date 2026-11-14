@@ -8,6 +8,7 @@ from pymordial.core.app import PymordialApp
 from pymordial.core.controller import PymordialController
 from pymordial.core.screen import PymordialScreen
 from pymordial.core.state_machine import AppState, StateMachine
+from pymordial.ui.element import PymordialElement
 
 
 class TestPymordialControllerABC:
@@ -95,6 +96,80 @@ class TestPymordialApp:
         mock_controller.open_app = MagicMock(return_value=False)
         assert app.open(mock_controller) is False
         assert app.app_state.current_state == AppState.CLOSED
+
+    def test_open_with_ready_element_reaches_ready(self, mock_controller):
+        """open() waits for the ready element and marks the app READY."""
+        ready = PymordialElement(label="Main Menu")
+        app = PymordialApp(
+            app_name="TestApp", package_name="com.test.app", ready_element=ready
+        )
+        mock_controller.is_element_visible = MagicMock(return_value=True)
+        assert app.open(mock_controller) is True
+        assert app.app_state.current_state == AppState.READY
+        mock_controller.is_element_visible.assert_called_once_with(ready, max_tries=1)
+
+    def test_open_ready_timeout_stays_loading_and_retries(self, mock_controller):
+        """A missing ready element leaves the app LOADING; the wait retries."""
+        ready = PymordialElement(label="Main Menu")
+        app = PymordialApp(
+            app_name="TestApp", package_name="com.test.app", ready_element=ready
+        )
+        mock_controller.is_element_visible = MagicMock(return_value=False)
+        assert app.open(mock_controller, timeout=0) is False
+        assert app.app_state.current_state == AppState.LOADING
+
+        # The element shows up later: retry the wait without relaunching.
+        mock_controller.is_element_visible = MagicMock(return_value=True)
+        assert app.wait_until_ready(mock_controller) is True
+        assert app.app_state.current_state == AppState.READY
+
+    def test_open_without_ready_element_never_polls(self, mock_controller):
+        """Apps with no ready element behave exactly as before."""
+        app = PymordialApp(app_name="TestApp", package_name="com.test.app")
+        mock_controller.is_element_visible = MagicMock(return_value=True)
+        assert app.open(mock_controller) is True
+        assert app.app_state.current_state == AppState.LOADING
+        mock_controller.is_element_visible.assert_not_called()
+
+    def test_wait_until_ready_without_ready_element(self, mock_controller):
+        """Waiting with no ready element to check returns False."""
+        app = PymordialApp(app_name="TestApp", package_name="com.test.app")
+        app.app_state.transition_to(AppState.LOADING)
+        assert app.wait_until_ready(mock_controller) is False
+        assert app.app_state.current_state == AppState.LOADING
+
+    def test_wait_until_ready_already_ready(self, mock_controller):
+        """Waiting on an already READY app returns True without polling."""
+        ready = PymordialElement(label="Main Menu")
+        app = PymordialApp(
+            app_name="TestApp", package_name="com.test.app", ready_element=ready
+        )
+        app.app_state.transition_to(AppState.LOADING)
+        app.app_state.transition_to(AppState.READY)
+        mock_controller.is_element_visible = MagicMock(return_value=True)
+        assert app.wait_until_ready(mock_controller) is True
+        mock_controller.is_element_visible.assert_not_called()
+
+    def test_wait_until_ready_from_closed(self, mock_controller):
+        """A CLOSED app cannot skip to READY; the wait returns False."""
+        ready = PymordialElement(label="Main Menu")
+        app = PymordialApp(
+            app_name="TestApp", package_name="com.test.app", ready_element=ready
+        )
+        assert app.wait_until_ready(mock_controller) is False
+        assert app.app_state.current_state == AppState.CLOSED
+
+    def test_failed_open_never_waits(self, mock_controller):
+        """A failed launch must not wait for the ready element."""
+        ready = PymordialElement(label="Main Menu")
+        app = PymordialApp(
+            app_name="TestApp", package_name="com.test.app", ready_element=ready
+        )
+        mock_controller.open_app = MagicMock(return_value=False)
+        mock_controller.is_element_visible = MagicMock(return_value=True)
+        assert app.open(mock_controller) is False
+        assert app.app_state.current_state == AppState.CLOSED
+        mock_controller.is_element_visible.assert_not_called()
 
 
 class TestPymordialAppImplementation:
