@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 from uuid import uuid4
@@ -86,13 +87,23 @@ class PymordialApp:
         while already LOADING leaves the state untouched instead of
         raising on an invalid LOADING -> LOADING transition).
 
+        When a ready_element is set, opening also waits for it to become
+        visible and transitions to READY. The wait is bounded by the same
+        timeout. If the element never appears, the app stays LOADING and
+        this method returns False, so a script never treats a
+        not-yet-ready app as ready; call wait_until_ready() again later
+        to retry without relaunching.
+
         Args:
             controller: The controller that launches the app on the device.
-            timeout: Maximum seconds to wait for launch.
+            timeout: Maximum seconds to wait for launch and for the ready
+                element to appear.
             wait_time: Seconds to wait after the launch command.
 
         Returns:
-            True if the app launched successfully, False otherwise.
+            True if the app launched and is ready to use (READY, or
+            LOADING when no ready element is set). False if the launch
+            failed or the ready element never appeared in time.
 
         Raises:
             ValueError: If package_name was never set.
@@ -105,7 +116,51 @@ class PymordialApp:
         )
         if result and self.app_state.current_state != AppState.LOADING:
             self.app_state.transition_to(AppState.LOADING)
+        if result and self.ready_element is not None:
+            return self.wait_until_ready(controller, timeout=timeout)
         return result
+
+    def wait_until_ready(
+        self,
+        controller: "PymordialController",
+        timeout: int = 60,
+        interval: float = 0.5,
+    ) -> bool:
+        """Waits for the app's ready element to appear, then marks it READY.
+
+        Polls controller.is_element_visible(self.ready_element) until the
+        element is seen or the timeout expires. This is the step the app
+        lifecycle documents between LOADING and READY; without it an app
+        can never leave LOADING, even when its ready element is on screen.
+
+        Args:
+            controller: The controller that checks element visibility.
+            timeout: Maximum seconds to wait for the ready element.
+            interval: Seconds to sleep between visibility checks.
+
+        Returns:
+            True if the ready element was seen and the app is now READY,
+            or if the app was already READY. False if no ready element
+            is set, the app is not LOADING, or the timeout expired.
+            On timeout the state stays LOADING, so the wait can be
+            retried without relaunching.
+        """
+        if self.ready_element is None:
+            return False
+        if self.app_state.current_state == AppState.READY:
+            return True
+        if self.app_state.current_state != AppState.LOADING:
+            return False
+
+        deadline = time.monotonic() + timeout
+        while True:
+            if controller.is_element_visible(self.ready_element, max_tries=1):
+                self.app_state.transition_to(AppState.READY)
+                return True
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return False
+            time.sleep(min(interval, remaining))
 
     def close(
         self,
