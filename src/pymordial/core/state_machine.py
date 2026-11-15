@@ -4,6 +4,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
 
+from pymordial.utils.exceptions import PymordialStateError
+
 
 class AppState(Enum):
     """Enumeration of application lifecycle states."""
@@ -53,12 +55,13 @@ class StateMachine:
             The previous state.
 
         Raises:
-            ValueError: If the transition is not valid and ignore_validation is False.
+            PymordialStateError: If the transition is not valid and
+                ignore_validation is False.
         """
         # Validate transition only if not ignoring validation
         if not ignore_validation:
             if new_state not in self.transitions.get(self.current_state, []):
-                raise ValueError(
+                raise PymordialStateError(
                     f"Invalid state transition from {self.current_state} to {new_state}"
                 )
 
