@@ -1,10 +1,12 @@
 ﻿---
-okf_version: "0.2"
+okf_version: "0.3"
+title: "Pymordial Knowledge Base"
+description: "Core automation framework architecture, controller coordination, UI elements, device blueprints, and configuration management for Pymordial."
 ---
 
 # Pymordial Knowledge Base
 
-An Open Knowledge Format (OKF v0.2) knowledge bundle documenting the Pymordial core automation framework, controller coordination, device blueprints, and state machine lifecycle.
+An Open Knowledge Format (OKF v0.3) knowledge bundle documenting the Pymordial core automation framework, controller coordination, device blueprints, and state machine lifecycle.
 
 ## Domains & Catalogs
 
