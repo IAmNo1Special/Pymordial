@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-11-19
+
+### Added
+- **App lifecycle**: `PymordialApp.open()`, `close()`, and `wait_until_ready()` drive an app through a controller without duplicating state transitions. `wait_until_ready()` polls the ready element and leaves the app in `LOADING` on timeout so the wait can be retried without relaunching.
+- **Element scaling**: `PymordialElement.scaled_position()`, `scaled_size()`, and `scaled_region()` scale a layout recorded at `og_resolution` to the current screen size.
+- **Plugin cleanup**: `PluginRegistry.shutdown_all()` shuts down every registered plugin, continues past individual failures, and clears the registry.
+- Added the Python 3.13 classifier.
+
+### Changed
+- **Breaking**: Invalid state transitions now raise `PymordialStateError`. It subclasses both `PymordialError` and `ValueError`, so existing `except ValueError` handlers keep working.
+- **Breaking**: `AppState` transitions are stricter: `CLOSED` may only move to `LOADING`.
+- Entry-point plugins are now initialized even when the registry has no configuration; an empty config means "use plugin defaults" instead of skipping initialization.
+
+### Fixed
+- `StateMachine.register_handler()` now merges enter/exit handlers for a state instead of replacing handlers registered earlier.
+
 ## [0.4.1] - 2026-01-25
 
 ### Changed

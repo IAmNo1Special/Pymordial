@@ -1,27 +1,26 @@
-# Pymordial v0.4.1 Release Notes
+# Pymordial v0.5.0 Release Notes
 
-## 🚀 Platform-Agnostic Core
+## 🚀 App Lifecycle, Scaling, and Stricter States
 
-This release marks a major architectural shift, decoupling the core framework from Android-specific implementations. `pymordial` is now a truly platform-agnostic automation interface.
+This release gives `PymordialApp` its own lifecycle helpers, adds resolution-independent element coordinates, and makes invalid state transitions fail with a dedicated exception.
 
 ### Highlights
 
-*   **Dataclass Architecture**: `PymordialApp`, `PymordialScreen`, and `PymordialElement` are now pure dataclasses with auto-generated IDs and built-in validation.
-*   **Android Decoupling**: Moved all Android package management, ADB commands, and BlueStacks logic out of the core library. These will live in platform-specific extensions (e.g., `pymordialblue`).
-*   **Clean Configuration**: The `configs.yaml` and `TypedDict` structures have been stripped of all ADB/BlueStacks settings. The core config now only manages generic `app`, `element`, and `controller` settings.
-*   **Blueprint Cleanup**: Removed improper `basicConfig` calls from device blueprints and aligned state machines to be instance attributes.
-*   **Testing Improvements**: Added comprehensive coverage for state machine transitions and core dataclass behavior.
+*   **App Lifecycle**: `PymordialApp` now has `open()`, `close()`, and `wait_until_ready()` methods that drive the app through a `PymordialController`. An app with a `ready_element` can reach `READY` without callers duplicating state transitions. A timed-out wait stays in `LOADING`, so it can be retried without relaunching.
+*   **Element Scaling**: `PymordialElement` gained `scaled_position()`, `scaled_size()`, and `scaled_region()`, which map a layout recorded at `og_resolution` onto the current screen size.
+*   **Plugin Cleanup**: `PluginRegistry.shutdown_all()` shuts down every registered plugin in order, logs failures instead of aborting, and makes repeat calls a no-op.
+*   **Plugin Initialization**: Entry-point plugins are now initialized even when the registry has no configuration. An empty config means "use the plugin's defaults" rather than skipping setup.
+*   **Handler Registration**: `StateMachine.register_handler()` merges enter/exit handlers for a state instead of replacing handlers registered earlier.
 
 ### ⚠️ Breaking Changes
 
-*   **PymordialApp Changes**: `PymordialApp` is now a dataclass, not an ABC. You can instantiate it directly or extend it with additional fields.
-*   **Configuration Keys**: Removed `adb`, `bluestacks`, `image_controller`, `extract_strategy`, and `setup` sections from the configuration.
-*   **Module Path Change**: `pymordial.core.blueprints.element` has been moved to `pymordial.ui.element`. Please update your imports.
+*   **State Errors**: Invalid transitions now raise `PymordialStateError`. It subclasses both `PymordialError` and `ValueError`, so existing `except ValueError` handlers keep catching it.
+*   **App State Transitions**: `AppState` is stricter. `CLOSED` may only transition to `LOADING`; `LOADING` may move to `CLOSED` or `READY`; `READY` may move to `CLOSED` or `LOADING`.
 
 ### 📦 Installation
 
 ```bash
-uv add pymordial==0.4.0
+uv add pymordial==0.5.0
 ```
 
 ---
@@ -29,3 +28,4 @@ uv add pymordial==0.4.0
 ### 🤝 Contributors
 
 *   @IAmNo1Special
+*   @Fsdiallo
